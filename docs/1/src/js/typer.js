@@ -1,4 +1,4 @@
-class TypeValue {// 型指示値(型を示す値)
+class TypeValue {// 型指示値(型を示す値(NaN,null,undefined,コンストラクタ関数))
     static #primitives= Object.freeze({
         boolean: Boolean,
         number: Number,
@@ -39,8 +39,15 @@ class TypeValue {// 型指示値(型を示す値)
         if ('function'===typeof v) return Function;
         return this.#getObjectType(v);
     }
+    static getName(v) {
+        this.valid(v);
+        if (null===v) return 'Null';
+        if (undefined===v) return 'Undefined';
+        if (Number.isNaN(v)) return 'NaN';
+        return v.name;
+    }
 }
-class TypeName {// 型名
+class ValueTypeName {// 型名
     static #getTag(v) {return Object.prototype.toString.call(v).slice(8, -1);}
     static get(v) {
         if (Number.isNaN(v)) return 'NaN';
@@ -56,13 +63,14 @@ class TypeName {// 型名
 }
 export class Typer {
     static get type() {return TypeValue}
-    static get name() {return TypeName}
+    static get name() {return ValueTypeName}
     static is(type, value, name) {
         this.type.valid(type);
-        const expName = this.name.get(type); // expected
+        const expName = this.type.getName(type); // expected
         const actName = this.name.get(value); // actual
         if (expName !== actName) {
             throw new TypeError(`${('string'===typeof name) ? `"${name}" の` : ''}型が不正です。期待: ${expName}, 実際: ${actName}。`);
         }
+        return true;
     }
 }
