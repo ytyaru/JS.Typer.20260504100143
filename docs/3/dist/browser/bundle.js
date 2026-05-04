@@ -42,15 +42,21 @@
   __export(exports_typer, {
     Typer: () => Typer
   });
+  var getObjectType = (v) => {
+    if (Object.getPrototypeOf(v) === null)
+      return Object;
+    if (!("constructor" in v)) {
+      throw new TypeError(`想定外の型です。constructorを持っていません。`);
+    }
+    if (!("name" in v.constructor)) {
+      throw new TypeError(`想定外の型です。constructorはnameを持っていません。`);
+    }
+    return Object === v.constructor ? Object : v.constructor;
+  };
 
   class TypeValue {
-    static #primitives = Object.freeze({
-      boolean: Boolean,
-      number: Number,
-      bigint: BigInt,
-      string: String,
-      symbol: Symbol
-    });
+    static #primTypes = [Boolean, Number, BigInt, String, Symbol];
+    static #primitives = Object.freeze(this.#primTypes.reduce((o, t) => o[t.name.toLowerCase()] = t, {}));
     static get #prims() {
       return this.#primitives;
     }
@@ -68,17 +74,6 @@
       if (Number.isNaN(v))
         return true;
       return false;
-    }
-    static #getObjectType(v) {
-      if (Object.getPrototypeOf(v) === null)
-        return Object;
-      if (!("constructor" in v)) {
-        throw new TypeError(`想定外の型です。constructorを持っていません。`);
-      }
-      if (!("name" in v.constructor)) {
-        throw new TypeError(`想定外の型です。constructorはnameを持っていません。`);
-      }
-      return Object === v.constructor ? Object : v.constructor;
     }
     static valid(v) {
       if (Number.isNaN(v))
@@ -100,7 +95,7 @@
         return Array;
       if (typeof v === "function")
         return Function;
-      return this.#getObjectType(v);
+      return getObjectType(v);
     }
     static getName(v) {
       this.valid(v);
@@ -122,17 +117,8 @@
       if (Number.isNaN(v))
         return "NaN";
       const tag = this.#getTag(v);
-      if (tag === "Object") {
-        if (Object.getPrototypeOf(v) === null)
-          return tag;
-        if (!("constructor" in v)) {
-          throw new TypeError(`想定外の型です。constructorを持っていません。`);
-        }
-        if (!("name" in v.constructor)) {
-          throw new TypeError(`想定外の型です。constructorはnameを持っていません。`);
-        }
-        return v.constructor.name === "Object" ? tag : v.constructor.name;
-      }
+      if (tag === "Object")
+        return getObjectType(v).name;
       return tag;
     }
   }
