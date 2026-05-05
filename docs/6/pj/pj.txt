@@ -1,0 +1,17 @@
+dist
+    esm
+        bundle.js
+        bundle.min.js
+    browser
+        bundle.js
+        bundle.min.js
+test
+    test.sh +x
+    typer.js
+build
+    build.sh +x
+    build.js
+src
+    js
+        typer.js
+
