@@ -2,3 +2,5 @@ key.pem
 cert.pem
 localhost.pem
 *.pem
+node_modules/
+docs/typedocs/files/
