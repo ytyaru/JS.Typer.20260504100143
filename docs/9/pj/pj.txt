@@ -5,13 +5,34 @@ dist
     browser
         bundle.js
         bundle.min.js
-test
-    test.sh +x
-    typer.js
+test/
+    test.sh     +x
+    main.js             # エントリポイント（Typerクラス）
+        part/               # ライブラリの内部部品（非公開）
+            error.js          # 例外クラス定義
+            core.js           # 識別（Identity, TypeSpec, ActualValue）
+            engine.js         # 判定ロジック（true/false）
+            resolver.js       # 解決（例外ラップ・ルーティング）
+        util/               # 内部ユーティリティ
+            i18n/             # 言語定義（将来用）
+                ja.js
+                en.js
+        lib/                # 外部ライブラリ（現在は空）
+
 build
     build.sh +x
     build.js
 src
     js
-        typer.js
+        main.js             # エントリポイント（Typerクラス）
+        part/               # ライブラリの内部部品（非公開）
+            error.js          # 例外クラス定義
+            core.js           # 識別（Identity, TypeSpec, ActualValue）
+            engine.js         # 判定ロジック（true/false）
+            resolver.js       # 解決（例外ラップ・ルーティング）
+        util/               # 内部ユーティリティ
+            i18n/             # 言語定義（将来用）
+                ja.js
+                en.js
+        lib/                # 外部ライブラリ（現在は空）
 

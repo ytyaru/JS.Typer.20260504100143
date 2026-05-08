@@ -1,0 +1,21 @@
+{
+    "source": {
+        "include": ["src/js/main.js", "src/js/part"],
+        "includePattern": ".+\\.js$",
+        "excludePattern": "(^|\\/|\\\\)_"
+    },
+    "opts": {
+        "destination": "./docs/jsdoc/files",
+        "recurse": true,
+        "readme": "README.md",
+        "verbose": true
+    },
+    "templates": {
+        "cleverLinks": true,
+        "monospaceLinks": true,
+        "default": {
+            "outputSourceFiles": true,
+            "includeDate": false
+        }
+    }
+}
