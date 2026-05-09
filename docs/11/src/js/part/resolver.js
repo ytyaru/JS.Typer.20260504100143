@@ -12,6 +12,7 @@ import { TyperEngine } from './engine.js';
  * 判定ロジックの実行と、その結果に基づく例外の送出・戻り値の解決を担当するクラス。
  * 【内部用】判定の成否だけでなく、利用者の設定に応じた挙動の制御、
  * および発生した例外が「想定内」か「想定外」かを識別し、適切な責任境界へルーティングします。
+  * {@inlineSource}
  */
 export class TyperResolver {
     /**
@@ -22,10 +23,11 @@ export class TyperResolver {
      * @param {string|null} label - 対象の名称。
      * @param {boolean} throwable - 判定失敗時に例外を送出するかどうか。
      * @returns {boolean} - 判定に成功した場合は true。失敗し、かつ throwable が false の場合は false。
-     * @throws {@link TyperNotIsError} - 判定に失敗し、かつ throwable が true の場合。
-     * @throws {@link TyperError} - 想定内のエラーが発生した場合。
-     * @throws {@link TyperUnexpectedError} - 想定外のエラーが発生した場合。
-     */
+     * @throws {@link part/error.TyperNotIsError} - 判定に失敗し、かつ throwable が true の場合。
+     * @throws {@link part/error.TyperError} - 想定内のエラーが発生した場合。
+     * @throws {@link part/error.TyperUnexpectedError} - 想定外のエラーが発生した場合。
+      * {@inlineSource}
+ */
     static is(typeSpec, actualValue, label, throwable) {
         return this.#resolve(TyperEngine.isLogic, typeSpec, actualValue, label, throwable, TyperNotIsError);
     }
@@ -38,10 +40,11 @@ export class TyperResolver {
      * @param {string|null} label - 対象の名称。
      * @param {boolean} throwable - 判定失敗時に例外を送出するかどうか。
      * @returns {boolean} - 判定に成功した場合は true。失敗し、かつ throwable が false の場合は false。
-     * @throws {@link TyperNotOfError} - 判定に失敗し、かつ throwable が true の場合。
-     * @throws {@link TyperError} - 想定内のエラーが発生した場合。
-     * @throws {@link TyperUnexpectedError} - 想定外のエラーが発生した場合。
-     */
+     * @throws {@link part/error.TyperNotOfError} - 判定に失敗し、かつ throwable が true の場合。
+     * @throws {@link part/error.TyperError} - 想定内のエラーが発生した場合。
+     * @throws {@link part/error.TyperUnexpectedError} - 想定外のエラーが発生した場合。
+      * {@inlineSource}
+ */
     static of(typeSpec, actualValue, label, throwable) {
         return this.#resolve(TyperEngine.ofLogic, typeSpec, actualValue, label, throwable, TyperNotOfError);
     }
@@ -57,7 +60,8 @@ export class TyperResolver {
      * @param {typeof TyperResultError} MismatchError - 判定失敗時に送出する例外クラス。
      * @returns {boolean} - 判定結果。
      * @private
-     */
+      * {@inlineSource}
+ */
     static #resolve(logic, typeSpec, actualValue, label, throwable, MismatchError) {
         try {
             // 判定ロジックの実行。
@@ -109,7 +113,8 @@ export class TyperResolver {
      * @param {string|null} label - 対象の名称。
      * @returns {TyperResultError} - 構築された例外インスタンス。
      * @private
-     */
+      * {@inlineSource}
+ */
     static #createMismatchError(MismatchError, typeSpec, actualValue, label) {
         const expectedName = TypeSpec.getName(typeSpec);
         const actualName = ActualValue.getName(actualValue);

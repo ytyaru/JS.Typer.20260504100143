@@ -3,6 +3,7 @@ import { TypeSpec, ActualValue } from './core.js';
 /**
  * 型判定の純粋なロジック（true/false）を担当するクラス。
  * 【内部用】判定の成否のみを返し、例外のルーティングや戻り値の制御は行いません。
+  * {@inlineSource}
  */
 export class TyperEngine {
     /**
@@ -11,7 +12,8 @@ export class TyperEngine {
      * @param {any} typeSpec - 比較対象となる型指示値（NaN, null, undefined, またはコンストラクタ）。
      * @param {any} actualValue - 判定対象となる生の値。
      * @returns {boolean} - 型指示値と値の正体（Identity）が完全一致すれば true。
-     */
+      * {@inlineSource}
+ */
     static isLogic(typeSpec, actualValue) {
         // 1. 引数の妥当性を検証。不正な場合は core.js 内で定義された例外が送出される。
         TypeSpec.valid(typeSpec);
@@ -30,7 +32,8 @@ export class TyperEngine {
      * @param {any} typeSpec - 比較対象となる型指示値（NaN, null, undefined, またはコンストラクタ）。
      * @param {any} actualValue - 判定対象となる生の値。
      * @returns {boolean} - 完全一致、または継承関係（instanceof）があれば true。
-     */
+      * {@inlineSource}
+ */
     static ofLogic(typeSpec, actualValue) {
         // 1. まずは完全一致を確認。
         // 内部で isLogic を直接呼び出すことで、バリデーションと Identity 抽出を共通化する。

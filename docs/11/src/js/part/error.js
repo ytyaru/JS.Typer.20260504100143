@@ -1,13 +1,15 @@
 /**
  * Typerライブラリの基底例外クラス。
  * 【API公開】Typer.error として参照される基底クラスです。
+  * {@inlineSource}
  */
 export class TyperError extends TypeError {
     /**
      * 指定された値が、このクラスのインスタンスであるか判定します。
      * @param {any} value - 判定対象の値。
      * @returns {boolean} - このクラスの直接のインスタンスであれば true。
-     */
+      * {@inlineSource}
+ */
     static is(value) {
         return value instanceof this && value.constructor === this;
     }
@@ -16,7 +18,8 @@ export class TyperError extends TypeError {
      * 指定された値が、このクラス（または継承クラス）のインスタンスであるか判定します。
      * @param {any} value - 判定対象の値。
      * @returns {boolean} - このクラスを継承したインスタンスであれば true。
-     */
+      * {@inlineSource}
+ */
     static of(value) {
         return value instanceof this;
     }
@@ -25,7 +28,8 @@ export class TyperError extends TypeError {
      * 指定されたエラーが、Typerが意図的に送出した「想定内」のエラーか判定します。
      * @param {any} error - 判定対象のエラー。
      * @returns {boolean} - 想定内エラーのインスタンスであれば true。
-     */
+      * {@inlineSource}
+ */
     static isExpected(error) {
         return error instanceof TyperExpectedError;
     }
@@ -34,7 +38,8 @@ export class TyperError extends TypeError {
      * 指定されたエラーが、Typerが想定外の事態で送出した「想定外」のエラーか判定します。
      * @param {any} error - 判定対象のエラー。
      * @returns {boolean} - 想定外エラーのインスタンスであれば true。
-     */
+      * {@inlineSource}
+ */
     static isUnexpected(error) {
         return error instanceof TyperUnexpectedError;
     }
@@ -45,7 +50,8 @@ export class TyperError extends TypeError {
      * @param {string} message - エラーメッセージ。
      * @param {ErrorOptions} [option] - エラーの原因などを格納するオプション。
      * @throws {this} - 常に自身を送出します。
-     */
+      * {@inlineSource}
+ */
     static throw(message, option) {
         throw new this(message, option);
     }
@@ -53,7 +59,8 @@ export class TyperError extends TypeError {
     /**
      * @param {string} message - エラーメッセージ。
      * @param {ErrorOptions} [option] - エラーの原因などを格納するオプション。
-     */
+      * {@inlineSource}
+ */
     constructor(message, option) {
         super(message, option);
         this.name = 'TyperError';
@@ -63,7 +70,8 @@ export class TyperError extends TypeError {
      * 自身が、指定されたクラスのインスタンスであるか判定します。
      * @param {Function} type - 比較対象のコンストラクタ。
      * @returns {boolean} - 指定された型の直接のインスタンスであれば true。
-     */
+      * {@inlineSource}
+ */
     is(type) {
         return this instanceof type && this.constructor === type;
     }
@@ -72,7 +80,8 @@ export class TyperError extends TypeError {
      * 自身が、指定されたクラス（または継承クラス）のインスタンスであるか判定します。
      * @param {Function} type - 比較対象のコンストラクタ。
      * @returns {boolean} - 指定された型の継承関係にあるインスタンスであれば true。
-     */
+      * {@inlineSource}
+ */
     of(type) {
         return this instanceof type;
     }
@@ -80,7 +89,8 @@ export class TyperError extends TypeError {
     /**
      * 自身がTyperの「想定内」エラーであるか判定します。
      * @returns {boolean}
-     */
+      * {@inlineSource}
+ */
     get isExpected() {
         return this instanceof TyperExpectedError;
     }
@@ -88,7 +98,8 @@ export class TyperError extends TypeError {
     /**
      * 自身がTyperの「想定外」エラーであるか判定します。
      * @returns {boolean}
-     */
+      * {@inlineSource}
+ */
     get isUnexpected() {
         return this instanceof TyperUnexpectedError;
     }
@@ -97,6 +108,7 @@ export class TyperError extends TypeError {
 /**
  * 想定内エラーの共通親クラス。
  * 【内部用】APIとしては公開されません。
+  * {@inlineSource}
  */
 class TyperExpectedError extends TyperError {
     constructor(message, option) {
@@ -108,6 +120,7 @@ class TyperExpectedError extends TyperError {
 /**
  * 想定外エラーのクラス。
  * 【内部用（モジュール公開）】Resolverでのラップに使用するため export されますが、API階層には含まれません。
+  * {@inlineSource}
  */
 export class TyperUnexpectedError extends TyperError {
     constructor(message, option) {
@@ -121,6 +134,7 @@ export class TyperUnexpectedError extends TyperError {
 /**
  * 利用者の呼び出し方に起因するエラーの基底クラス。
  * 【API公開】Typer.error.use として参照されます。
+  * {@inlineSource}
  */
 export class TyperUseError extends TyperExpectedError {
     constructor(message, option) { super(message, option); this.name = 'TyperUseError'; }
@@ -129,6 +143,7 @@ export class TyperUseError extends TyperExpectedError {
 /**
  * 引数そのものが不正である場合のエラー。
  * 【API公開】Typer.error.use.arg として参照されます。
+  * {@inlineSource}
  */
 export class TyperArgumentError extends TyperUseError {
     constructor(message, option) { super(message, option); this.name = 'TyperArgumentError'; }
@@ -137,6 +152,7 @@ export class TyperArgumentError extends TyperUseError {
 /**
  * 型指示値（TypeSpec）が不正である場合のエラー。
  * 【API公開】Typer.error.use.arg.spec として参照されます。
+  * {@inlineSource}
  */
 export class TyperTypeSpecError extends TyperArgumentError {
     constructor(message, option) { super(message, option); this.name = 'TyperTypeSpecError'; }
@@ -145,6 +161,7 @@ export class TyperTypeSpecError extends TyperArgumentError {
 /**
  * 判定の結果、不一致であった場合のエラーの基底クラス。
  * 【API公開】Typer.error.use.res として参照されます。
+  * {@inlineSource}
  */
 export class TyperResultError extends TyperUseError {
     constructor(message, option) { super(message, option); this.name = 'TyperResultError'; }
@@ -153,6 +170,7 @@ export class TyperResultError extends TyperUseError {
 /**
  * is() 判定において完全一致しなかった場合のエラー。
  * 【API公開】Typer.error.use.res.notIs として参照されます。
+  * {@inlineSource}
  */
 export class TyperNotIsError extends TyperResultError {
     constructor(message, option) { super(message, option); this.name = 'TyperNotIsError'; }
@@ -161,6 +179,7 @@ export class TyperNotIsError extends TyperResultError {
 /**
  * of() 判定において継承関係も認められなかった場合のエラー。
  * 【API公開】Typer.error.use.res.notOf として参照されます。
+  * {@inlineSource}
  */
 export class TyperNotOfError extends TyperResultError {
     constructor(message, option) { super(message, option); this.name = 'TyperNotOfError'; }
@@ -171,6 +190,7 @@ export class TyperNotOfError extends TyperResultError {
 /**
  * 言語仕様上の制限や矛盾に起因するエラーの基底クラス。
  * 【API公開】Typer.error.ecma として参照されます。
+  * {@inlineSource}
  */
 export class TyperECMAScriptError extends TyperExpectedError {
     constructor(message, option) { super(message, option); this.name = 'TyperECMAScriptError'; }
@@ -179,6 +199,7 @@ export class TyperECMAScriptError extends TyperExpectedError {
 /**
  * ボックス化されたプリミティブオブジェクトが渡された場合のエラー。
  * 【API公開】Typer.error.ecma.boxedPrim として参照されます。
+  * {@inlineSource}
  */
 export class TyperBoxedPrimitiveValueError extends TyperECMAScriptError {
     constructor(message, option) { super(message, option); this.name = 'TyperBoxedPrimitiveValueError'; }
@@ -187,6 +208,7 @@ export class TyperBoxedPrimitiveValueError extends TyperECMAScriptError {
 /**
  * オブジェクト（参照型）が不正値です。インスタンスであると予想されますが、'constructor' 情報が欠落しており、型を識別できません。
  * 【API公開】Typer.error.ecma.invalidObj として参照されます。
+  * {@inlineSource}
  */
 export class TyperInvalidObjectError extends TyperECMAScriptError {
     constructor(message, option) { super(message, option); this.name = 'TyperInvalidObjectError'; }
@@ -195,6 +217,7 @@ export class TyperInvalidObjectError extends TyperECMAScriptError {
 /**
  * 言語仕様上の制限により、型を識別できない特殊な値（document.all等）の場合のエラー。
  * 【API公開】Typer.error.ecma.unidentifiable として参照されます。
+  * {@inlineSource}
  */
 export class TyperUnidentifiableError extends TyperECMAScriptError {
     constructor(message, option) { super(message, option); this.name = 'TyperUnidentifiableError'; }
@@ -205,24 +228,23 @@ export class TyperUnidentifiableError extends TyperECMAScriptError {
 /**
  * 開発者の実装に起因するエラーの基底クラス。
  * 【API公開】Typer.error.dev として参照されます。
+  * {@inlineSource}
  */
-/*
 export class TyperDevelopError extends TyperExpectedError {
     constructor(message, option) { super(message, option); this.name = 'TyperDevelopError'; }
 }
-*/
 /**
  * Typerの実装上の矛盾に起因するエラー。
  * 【API公開】Typer.error.dev.impl として参照されます。
+  * {@inlineSource}
  */
-/*
 export class TyperImplementationError extends TyperDevelopError {
     constructor(message, option) { super(message, option); this.name = 'TyperImplementationError'; }
 }
-*/
 /**
  * 到達不能なコードパスに到達した場合のエラー。
  * 【API公開】Typer.error.dev.impl.unreachable として参照されます。
+  * {@inlineSource}
  */
 /*
 export class TyperUnreachableError extends TyperImplementationError {
@@ -231,30 +253,45 @@ export class TyperUnreachableError extends TyperImplementationError {
 */
 // --- 階層構造の構築 (Identityの一意性を維持) ---
 
-/** @type {typeof TyperUseError} 利用者責任のエラー階層。 */
+/** @type {typeof TyperUseError} 利用者責任のエラー階層。  * {@inlineSource}
+ */
 TyperError.use = TyperUseError;
-/** @type {typeof TyperArgumentError} 引数不正に関するエラー階層。 */
+/** @type {typeof TyperArgumentError} 引数不正に関するエラー階層。  * {@inlineSource}
+ */
 TyperError.use.arg = TyperArgumentError;
-/** @type {typeof TyperTypeSpecError} 型指示値の不正に関するエラー。 */
+/** @type {typeof TyperTypeSpecError} 型指示値の不正に関するエラー。  * {@inlineSource}
+ */
 TyperError.use.arg.spec = TyperTypeSpecError;
-/** @type {typeof TyperResultError} 判定不一致に関するエラー階層。 */
+/** @type {typeof TyperResultError} 判定不一致に関するエラー階層。  * {@inlineSource}
+ */
 TyperError.use.res = TyperResultError;
-/** @type {typeof TyperNotIsError} 完全一致（is）失敗時のエラー。 */
+/** @type {typeof TyperNotIsError} 完全一致（is）失敗時のエラー。  * {@inlineSource}
+ */
 TyperError.use.res.notIs = TyperNotIsError;
-/** @type {typeof TyperNotOfError} 継承一致（of）失敗時のエラー。 */
+/** @type {typeof TyperNotOfError} 継承一致（of）失敗時のエラー。  * {@inlineSource}
+ */
 TyperError.use.res.notOf = TyperNotOfError;
 
-/** @type {typeof TyperECMAScriptError} 言語仕様責任のエラー階層。 */
+/** @type {typeof TyperECMAScriptError} 言語仕様責任のエラー階層。  * {@inlineSource}
+ */
 TyperError.ecma = TyperECMAScriptError;
-/** @type {typeof TyperBoxedPrimitiveValueError} ボックス化オブジェクトに関するエラー。 */
+/** @type {typeof TyperBoxedPrimitiveValueError} ボックス化オブジェクトに関するエラー。  * {@inlineSource}
+ */
 TyperError.ecma.boxedPrim = TyperBoxedPrimitiveValueError;
-/** @type {typeof TyperInvalidObjectError} オブジェクト情報欠落に関するエラー。 */
+/** @type {typeof TyperInvalidObjectError} オブジェクト情報欠落に関するエラー。  * {@inlineSource}
+ */
 TyperError.ecma.invalidObj = TyperInvalidObjectError;
-/** @type {typeof TyperUnidentifiableError} 型識別不能に関するエラー。 */
+/** @type {typeof TyperUnidentifiableError} 型識別不能に関するエラー。  * {@inlineSource}
+ */
 TyperError.ecma.unidentifiable = TyperUnidentifiableError;
 
-/** @type {typeof TyperImplementationError} 開発者責任のエラー階層。 */
-//TyperError.dev = TyperImplementationError;
-/** @type {typeof TyperUnreachableError} 到達不能エラー。 */
+/** @type {typeof TyperImplementationError} 開発者責任のエラー階層。  * {@inlineSource}
+ */
+TyperError.dev = TyperImplementationError;
+/** @type {typeof TyperImplementationError} Typerの実装上の矛盾に起因するエラー。  * {@inlineSource}
+ */
+TyperError.dev.impl = TyperImplementationError;
+/** @type {typeof TyperUnreachableError} 到達不能エラー。  * {@inlineSource}
+ */
 //TyperError.dev.unreachable = TyperUnreachableError;
 
