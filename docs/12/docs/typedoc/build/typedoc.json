@@ -1,0 +1,17 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "entryPointStrategy": "expand",
+    "entryPoints": ["../../../src/js"],
+    "out": "../files",
+    "name": "Typer API Documentation",
+    "readme": "../../../README.md",
+    "includeVersion": true,
+    "cleanOutputDir": true,
+    "excludeInternal": true,
+    "skipErrorChecking": true,
+    "useTsLinkResolution": true,
+    "validation": {
+        "invalidLink": true
+    }
+}
+
