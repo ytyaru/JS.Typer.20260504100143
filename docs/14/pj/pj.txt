@@ -43,7 +43,8 @@ src
                 en.js
         lib/                # 外部ライブラリ（現在は空）
 test/
-    test.sh     +x
+    test.sh         +x
+    test.js             # 言語・ファイルを動的にスキャンしテストを回す司令塔
     js/
         main.js             # エントリポイント（Typerクラス）
         part/               # ライブラリの内部部品（非公開）

@@ -1,0 +1,364 @@
+// ../src/js/part/error.js
+class TyperError extends TypeError {
+  static is(value) {
+    return value instanceof this && value.constructor === this;
+  }
+  static of(value) {
+    return value instanceof this;
+  }
+  static isExpected(error) {
+    return error instanceof TyperExpectedError;
+  }
+  static isUnexpected(error) {
+    return error instanceof TyperUnexpectedError;
+  }
+  static throw(message, option) {
+    throw new this(message, option);
+  }
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperError";
+  }
+  is(type) {
+    return this instanceof type && this.constructor === type;
+  }
+  of(type) {
+    return this instanceof type;
+  }
+  get isExpected() {
+    return this instanceof TyperExpectedError;
+  }
+  get isUnexpected() {
+    return this instanceof TyperUnexpectedError;
+  }
+}
+
+class TyperExpectedError extends TyperError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperExpectedError";
+  }
+}
+
+class TyperUnexpectedError extends TyperError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperUnexpectedError";
+  }
+}
+
+class TyperUseError extends TyperExpectedError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperUseError";
+  }
+}
+
+class TyperArgumentError extends TyperUseError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperArgumentError";
+  }
+}
+
+class TyperTypeSpecError extends TyperArgumentError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperTypeSpecError";
+  }
+}
+
+class TyperResultError extends TyperUseError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperResultError";
+  }
+}
+
+class TyperNotIsError extends TyperResultError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperNotIsError";
+  }
+}
+
+class TyperNotOfError extends TyperResultError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperNotOfError";
+  }
+}
+
+class TyperECMAScriptError extends TyperExpectedError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperECMAScriptError";
+  }
+}
+
+class TyperBoxedPrimitiveValueError extends TyperECMAScriptError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperBoxedPrimitiveValueError";
+  }
+}
+
+class TyperInvalidObjectError extends TyperECMAScriptError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperInvalidObjectError";
+  }
+}
+
+class TyperUnidentifiableError extends TyperECMAScriptError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperUnidentifiableError";
+  }
+}
+
+class TyperDevelopError extends TyperExpectedError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperDevelopError";
+  }
+}
+
+class TyperImplementationError extends TyperDevelopError {
+  constructor(message, option) {
+    super(message, option);
+    this.name = "TyperImplementationError";
+  }
+}
+TyperError.use = TyperUseError;
+TyperError.use.arg = TyperArgumentError;
+TyperError.use.arg.spec = TyperTypeSpecError;
+TyperError.use.res = TyperResultError;
+TyperError.use.res.notIs = TyperNotIsError;
+TyperError.use.res.notOf = TyperNotOfError;
+TyperError.ecma = TyperECMAScriptError;
+TyperError.ecma.boxedPrim = TyperBoxedPrimitiveValueError;
+TyperError.ecma.invalidObj = TyperInvalidObjectError;
+TyperError.ecma.unidentifiable = TyperUnidentifiableError;
+TyperError.dev = TyperImplementationError;
+TyperError.dev.impl = TyperImplementationError;
+
+// ../src/js/util/i18n/ja.js
+var i18n = {
+  typeSpecifier: () => "型指示値 TypeSpecifier が不正値です。NaN, null, undefined またはコンストラクタ関数であるべきです。",
+  mismatch: (expected, actual, label) => `${label ? `"${label}" の` : ""}型が不正です。期待: ${expected}, 実際: ${actual}。`,
+  boxedPrimitive: (value, tag) => `プリミティブ型をnewしたインスタンスは使用禁止です。型を含めた一致判定をする '===' 比較に失敗するためです。これは 'valueOf()' によりプリミティブ値を返却するにもかかわらず、値の実体はオブジェクト（参照型）であるという矛盾によって起こります。型と挙動の整合性が取れない状態を排除するため、Typerではこれらを一律で使用禁止とします。値: ${value}, tag: '${tag}'。`,
+  invalidObject: (isNameMissing) => `オブジェクト（参照型）が不正値です。インスタンスであると予想されますが、'constructor${isNameMissing ? ".name" : ""}' 情報が欠落しており、型を識別できません。`,
+  unidentifiable: (value, type, tag) => `値の型を識別できません。'typeof' や 'instanceof' の結果が、実際の型（内部スロット）と一致しないためです。この矛盾はECMAScriptの言語仕様です。例えば値がdocument.allやProxy等で発生し得ます。その場合Typerは型を識別できません。値: ${value}, typeof: '${type}', tag: '${tag}'。`,
+  implementation: () => "Typerの実装に矛盾があります。'TyperUnexpectedError' が想定内のエラーとして送出されています。'TyperUnexpectedError' は想定外の事態においてのみ送出されるべきです。コードを修正してください。",
+  unexpected: (message) => `想定外のエラーが送出されました。Typerの実装に起因する不具合の可能性があります。不具合報告の際は、以下の詳細情報を添えてください。メッセージ: '${message}'。`
+};
+
+// ../src/js/part/core.js
+var NONE = Symbol.for("typer.specifier.none");
+var getTag = (value) => Object.prototype.toString.call(value).slice(8, -1);
+
+class ConstantSpecifier {
+  static is(value) {
+    return Number.isNaN(value) || value === null || value === undefined;
+  }
+  static get(value) {
+    return this.is(value) ? value : NONE;
+  }
+}
+
+class PrimitiveSpecifier {
+  static #types = {
+    boolean: Boolean,
+    number: Number,
+    bigint: BigInt,
+    string: String,
+    symbol: Symbol
+  };
+  static get(value) {
+    return this.#types[typeof value] || NONE;
+  }
+}
+
+class ContainerSpecifier {
+  static get(value) {
+    if (Array.isArray(value))
+      return Array;
+    if (value !== null && typeof value === "object") {
+      if (value.constructor === Object || Object.getPrototypeOf(value) === null) {
+        return Object;
+      }
+    }
+    return NONE;
+  }
+}
+
+class FunctionSpecifier {
+  static get(value) {
+    return typeof value === "function" ? Function : NONE;
+  }
+}
+
+class BoxedPrimitiveSpecifier {
+  static #types = [Boolean, Number, String];
+  static get(value) {
+    if (value === null || typeof value !== "object")
+      return NONE;
+    return this.#types.includes(value.constructor) ? value.constructor : NONE;
+  }
+}
+
+class InstanceSpecifier {
+  static get(value) {
+    if (value === null || typeof value !== "object")
+      return NONE;
+    const constructor = value.constructor;
+    if (!constructor || !constructor.name) {
+      throw new TyperInvalidObjectError(i18n.invalidObject(!!constructor));
+    }
+    return constructor;
+  }
+}
+
+class TypeSpecifier {
+  static valid(typeSpecifier) {
+    if (typeof typeSpecifier === "function" || ConstantSpecifier.is(typeSpecifier))
+      return true;
+    throw new TyperTypeSpecError(i18n.typeSpecifier());
+  }
+  static getName(typeSpecifier) {
+    if (Number.isNaN(typeSpecifier))
+      return "NaN";
+    if (typeSpecifier === null)
+      return "Null";
+    if (typeSpecifier === undefined)
+      return "Undefined";
+    return typeSpecifier.name || "Function";
+  }
+}
+
+class ActualValue {
+  static valid(value) {
+    const boxed = BoxedPrimitiveSpecifier.get(value);
+    if (boxed !== NONE) {
+      throw new TyperBoxedPrimitiveValueError(i18n.boxedPrimitive(value, getTag(value)));
+    }
+    return true;
+  }
+  static getSpecifier(value) {
+    const extractors = [
+      ConstantSpecifier,
+      PrimitiveSpecifier,
+      ContainerSpecifier,
+      FunctionSpecifier,
+      InstanceSpecifier
+    ];
+    for (const extractor of extractors) {
+      const spec = extractor.get(value);
+      if (spec !== NONE)
+        return spec;
+    }
+    throw new TyperUnidentifiableError(i18n.unidentifiable(value, typeof value, getTag(value)));
+  }
+  static getName(value) {
+    return TypeSpecifier.getName(this.getSpecifier(value));
+  }
+}
+
+// ../src/js/part/engine.js
+class TyperEngine {
+  static isLogic(typeSpecifier, actualValue) {
+    TypeSpecifier.valid(typeSpecifier);
+    ActualValue.valid(actualValue);
+    const specifier = ActualValue.getSpecifier(actualValue);
+    return Object.is(typeSpecifier, specifier);
+  }
+  static ofLogic(typeSpecifier, actualValue) {
+    if (this.isLogic(typeSpecifier, actualValue)) {
+      return true;
+    }
+    return typeof typeSpecifier === "function" && actualValue instanceof typeSpecifier;
+  }
+}
+
+// ../src/js/part/resolver.js
+class TyperResolver {
+  static is(typeSpecifier, actualValue, label, throwable) {
+    return this.#resolve(TyperEngine.isLogic, typeSpecifier, actualValue, label, throwable, TyperNotIsError);
+  }
+  static of(typeSpecifier, actualValue, label, throwable) {
+    return this.#resolve(TyperEngine.ofLogic, typeSpecifier, actualValue, label, throwable, TyperNotOfError);
+  }
+  static #resolve(logic, typeSpecifier, actualValue, label, throwable, MismatchError) {
+    try {
+      const success = logic.call(TyperEngine, typeSpecifier, actualValue);
+      if (success) {
+        return true;
+      }
+      if (throwable) {
+        throw this.#createMismatchError(MismatchError, typeSpecifier, actualValue, label);
+      }
+      return false;
+    } catch (error) {
+      if (TyperError.isExpected(error)) {
+        throw error;
+      }
+      if (TyperError.isUnexpected(error)) {
+        throw new TyperImplementationError(i18n.implementation(), { cause: error });
+      }
+      throw new TyperUnexpectedError(i18n.unexpected(error.message), { cause: error });
+    }
+  }
+  static #createMismatchError(MismatchError, typeSpecifier, actualValue, label) {
+    const expectedName = TypeSpecifier.getName(typeSpecifier);
+    const actualName = ActualValue.getName(actualValue);
+    return new MismatchError(i18n.mismatch(expectedName, actualName, label));
+  }
+}
+
+// ../src/js/main.js
+class Typer {
+  static get specifier() {
+    return TypeSpecifier;
+  }
+  static get value() {
+    return ActualValue;
+  }
+  static get error() {
+    return TyperError;
+  }
+  static #instances = {
+    thrower: null,
+    booler: null
+  };
+  static get thrower() {
+    if (!this.#instances.thrower) {
+      this.#instances.thrower = new Typer(true);
+    }
+    return this.#instances.thrower;
+  }
+  static get booler() {
+    if (!this.#instances.booler) {
+      this.#instances.booler = new Typer(false);
+    }
+    return this.#instances.booler;
+  }
+  static is(typeSpecifier, actualValue, label = null, throwable = true) {
+    return TyperResolver.is(typeSpecifier, actualValue, label, throwable);
+  }
+  static of(typeSpecifier, actualValue, label = null, throwable = true) {
+    return TyperResolver.of(typeSpecifier, actualValue, label, throwable);
+  }
+  constructor(throwable = false) {
+    this._ = { throwable };
+  }
+  is(typeSpecifier, actualValue, label = null) {
+    return Typer.is(typeSpecifier, actualValue, label, this._.throwable);
+  }
+  of(typeSpecifier, actualValue, label = null) {
+    return Typer.of(typeSpecifier, actualValue, label, this._.throwable);
+  }
+}
+export {
+  Typer
+};
