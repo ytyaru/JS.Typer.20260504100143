@@ -1,0 +1,9 @@
+build.js
+src/
+    main.js
+    util/               # 内部ユーティリティ
+        i18n/             # 言語定義（将来用）
+            index.js        # ダミー
+            ja.js
+            en.js
+
