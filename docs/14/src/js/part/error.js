@@ -2,7 +2,7 @@
  * Typerライブラリの基底例外クラス。
  * 【API公開】Typer.error として参照される基底クラスです。
  */
-export class TyperError extends TypeError {
+export class TyperError extends Error {
     /**
      * 指定された値が、このクラスのインスタンスであるか判定します。
      * @param {any} value - 判定対象の値。
@@ -252,9 +252,10 @@ TyperError.ecma.invalidObj = TyperInvalidObjectError;
 /** @type {typeof TyperUnidentifiableError} 型識別不能に関するエラー。 */
 TyperError.ecma.unidentifiable = TyperUnidentifiableError;
 
-/** @type {typeof TyperImplementationError} 開発者責任のエラー階層。 */
-TyperError.dev = TyperImplementationError;
+/** @type {typeof TyperDevelopError} 開発者責任のエラー階層。 */
+TyperError.dev = TyperDevelopError;
 /** @type {typeof TyperImplementationError} Typerの実装上の矛盾に起因するエラー。 */
 TyperError.dev.impl = TyperImplementationError;
 /** @type {typeof TyperUnreachableError} 到達不能エラー。 */
 //TyperError.dev.unreachable = TyperUnreachableError;
+
