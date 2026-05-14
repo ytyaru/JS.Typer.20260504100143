@@ -1,6 +1,6 @@
 import { describe, test, expect, spyOn } from "bun:test";
-import { TyperResolver } from "../../../src/js/part/resolver.js";
-import { TyperEngine } from "../../../src/js/part/engine.js";
+import { TyperResolver } from "../../../../src/js/part/resolver.js";
+import { TyperEngine } from "../../../../src/js/part/engine.js";
 import { 
     TyperNotIsError, 
     TyperNotOfError, 
@@ -8,15 +8,15 @@ import {
     TyperBoxedPrimitiveValueError,
     TyperImplementationError,
     TyperUnexpectedError
-} from "../../../src/js/part/error.js";
-import { i18n } from "../../../src/js/util/i18n/index.js";
+} from "../../../../src/js/part/error.js";
+import { i18n } from "../../../../src/js/util/i18n/index.js";
 // あなたが定義したエクスポート内容と一字一句一致させたインポート
 import { 
     data, broken,
     C, c, D, d, fn, arrowFn, Integer, integer, 
     ES5Class, es5Instance, asyncFn, genFn, dynamicFn, boundFn, proxyFn,
     proxyObj, argsObj, nullProtoObj, propertyDescriptor, objWithToStringTag
-} from "../../data.js";
+} from "../../../data.js";
 
 describe("part/resolver.js", () => {
     describe("class TyperResolver", () => {

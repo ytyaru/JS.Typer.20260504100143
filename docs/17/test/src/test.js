@@ -1,16 +1,17 @@
+import { Glob } from "bun"; // 冒頭に追加
 import { readdirSync, existsSync } from "node:fs";
 import { join, basename, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 /**
- * テストの実行マトリックスを管理し、適切な環境でテストを起動する司令塔クラス
+ * 原本（src/js）に対するテスト実行を管理するクラス
  */
-class TestOrchestrator {
+class SrcTestOrchestrator {
     constructor() {
-        this.projectRoot = resolve(import.meta.dir, "..");
+        this.srcDir = import.meta.dir; // test/src
+        this.projectRoot = resolve(this.srcDir, "../..");
         this.i18nSrcDir = join(this.projectRoot, "src/js/util/i18n");
-        this.distDir = join(this.projectRoot, "dist/browser");
-        this.testJsDir = join(this.projectRoot, "test/js");
+        this.testJsDir = join(this.srcDir, "js");
 
         this.validFormats = ["esm", "iife"];
         this.validLangs = this.#getAvailableLanguages();
@@ -21,29 +22,28 @@ class TestOrchestrator {
      */
     run() {
         try {
-            const bundleMatrix = this.#getBundleMatrix(process.argv[2]);
-            const testPattern = this.#getTestPattern(process.argv[3]);
+            // 1. 引数の解析
+            const spec = this.#parseBundleSpec(process.argv[2]);
+            const testPattern = this.#parseTestPath(process.argv[3]);
 
-            this.#executeMatrix(bundleMatrix, testPattern);
+            // 2. プリプロセス: テスト専用ターゲット（core.test-target.js）の生成
+            this.#generateTestTarget();
+
+            // 3. マトリックス実行
+            this.#executeMatrix(spec, testPattern);
         } catch (error) {
-            console.error(`❌ エラー: ${error.message}`);
+            console.error(`❌ [src] 設定エラー: ${error.message}`);
             process.exit(1);
         }
     }
 
-    /**
-     * 言語ファイルをスキャンして利用可能な言語リストを返す
-     */
     #getAvailableLanguages() {
         return readdirSync(this.i18nSrcDir)
             .filter(file => file.endsWith(".js") && file !== "index.js")
             .map(file => basename(file, ".js"));
     }
 
-    /**
-     * 第1引数からテスト対象となるビルド成果物のマトリックスを生成する
-     */
-    #getBundleMatrix(specArg) {
+    #parseBundleSpec(specArg) {
         if (!specArg || specArg === "all") {
             return {
                 formats: this.validFormats,
@@ -58,10 +58,9 @@ class TestOrchestrator {
         }
 
         const [format, lang, min] = parts;
-
         if (!this.validFormats.includes(format)) throw new Error(`不正な形式 (format) です: ${format}`);
         if (!this.validLangs.includes(lang)) throw new Error(`不正な言語 (lang) です: ${lang}`);
-        if (min !== "" && min !== "min") throw new Error(`不正な圧縮指定 (minify) です。"" または "min" を指定してください: ${min}`);
+        if (min !== "" && min !== "min") throw new Error(`不正な圧縮指定です: ${min}`);
 
         return {
             formats: [format],
@@ -69,14 +68,13 @@ class TestOrchestrator {
             minifieds: [min === "min"]
         };
     }
-
-    /**
-     * 第2引数から実行するテストファイルのパターンを生成する
-     * Bunが「フィルター」ではなく「パス」として認識するよう、必ず "./" で始まるようにする
-     */
-    #getTestPattern(pathArg) {
+    #parseTestPath(pathArg) {
         if (!pathArg || pathArg === "all") {
-            return "./js/**/*.js";
+            // 修正：命名規則外のファイルをパスとして明示的に指定するため、ファイルリストを生成
+            const glob = new Glob("js/**/*.js");
+            return Array.from(glob.scanSync({ cwd: this.srcDir }))
+                .filter(file => !file.endsWith(".test-target.js"))
+                .map(file => `./${file}`);
         }
 
         const fullPath = join(this.testJsDir, pathArg);
@@ -84,76 +82,48 @@ class TestOrchestrator {
             throw new Error(`テストファイルが見つかりません: ${fullPath}`);
         }
 
-        // path.join は先頭の "./" を消してしまうことがあるため、明示的に付与する
-        const relativePath = join("js", pathArg);
-        return `./${relativePath}`;
+        return `./${join("js", pathArg)}`;
     }
 
-    /**
-     * 生成されたマトリックスに基づいてテストを順次実行する
-     */
-     /*
-    #executeMatrix(matrix, testPattern) {
-        console.log(`🌍 利用可能な言語: ${this.validLangs.join(", ")}`);
+    #generateTestTarget() {
+        console.log("🛠️  テスト専用ターゲットを生成中...");
+        const result = spawnSync("bun", ["run", "./gen-test-target.js"], {
+            cwd: this.srcDir,
+            stdio: "inherit"
+        });
 
-        for (const format of matrix.formats) {
-            for (const lang of matrix.langs) {
-                for (const isMin of matrix.minifieds) {
-                    const fileName = `bundle${isMin ? ".min" : ""}.js`;
-                    const bundlePath = join(this.distDir, format, lang, fileName);
+        if (result.status !== 0) {
+            throw new Error("テスト専用ターゲットの生成に失敗しました。");
+        }
+    }
 
-                    if (!existsSync(bundlePath)) {
-                        console.warn(`⚠️  スキップ: ファイルが存在しません: ${bundlePath}`);
-                        continue;
-                    }
+    #executeMatrix(spec, testPattern) {
+        console.log(`🌍 テスト対象言語: ${spec.langs.join(", ")}`);
 
-                    this.#runBunTest(bundlePath, lang, testPattern, isMin);
+        for (const format of spec.formats) {
+            for (const lang of spec.langs) {
+                for (const isMin of spec.minifieds) {
+                    this.#runBunTest(format, lang, isMin, testPattern);
                 }
             }
         }
-        console.log(`\n✅ すべてのテスト実行が完了しました。`);
+        console.log(`\n✅ [src] すべてのテスト工程が完了しました。`);
     }
-    */
-    #executeMatrix(langs, testPattern) {
-        console.log(`🌍 利用可能な言語: ${langs.join(", ")}`);
 
-        for (const lang of langs) {
-            console.log(`\n🧪 テスト実行中: [${lang}] -> ${testPattern}`);
-
-            // 成果物(dist)は見ず、常に src/js をテスト対象とする
-            // i18n の差し替えは setup.js プラグインが担当する
-            const result = spawnSync("bun", ["test", "--coverage", "--preload", "./setup.js", testPattern], {
-                cwd: import.meta.dir,
-                stdio: "inherit",
-                env: {
-                    ...process.env,
-                    TEST_LANG: lang
-                }
-            });
-
-            if (result.status !== 0) {
-                console.error(`\n❌ テスト失敗: [${lang}]`);
-                process.exit(1);
-            }
-        }
-        console.log(`\n✅ すべてのテストが完了しました。`);
-    }
-    /**
-     * 個別のテストプロセスを起動する
-     */
-    #runBunTest(bundlePath, lang, testPattern, isMin) {
+    #runBunTest(format, lang, isMin, testPattern) {
         const minLabel = isMin ? "圧縮(min)" : "非圧縮";
-        const format = bundlePath.includes("/esm/") ? "esm" : "iife";
-        
-        console.log(`\n🧪 テスト実行中: [${lang}] [${format}] [${minLabel}] -> ${testPattern}`);
+        console.log(`\n🧪 実行: [${lang}] [${format}] [${minLabel}] -> ${testPattern}`);
 
-        const result = spawnSync("bun", ["test", "--coverage", "--preload", "./setup.js", testPattern], {
-            cwd: import.meta.dir,
+        // --preload ./setup.js により、メモリ上で i18n を差し替える
+        const targets = Array.isArray(testPattern) ? testPattern : [testPattern];
+        const result = spawnSync("bun", ["test", "--preload", "./setup.js", ...targets], {
+            cwd: this.srcDir,
             stdio: "inherit",
             env: {
                 ...process.env,
                 TEST_LANG: lang,
-                TEST_BUNDLE_PATH: bundlePath
+                // srcテストでも、必要に応じて成果物との比較ができるようパスを渡しておく
+                TEST_BUNDLE_PATH: `../../dist/browser/${format}/${lang}/bundle${isMin ? ".min" : ""}.js`
             }
         });
 
@@ -164,5 +134,5 @@ class TestOrchestrator {
     }
 }
 
-new TestOrchestrator().run();
+new SrcTestOrchestrator().run();
 

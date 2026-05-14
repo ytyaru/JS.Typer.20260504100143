@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import * as Err from "../../../src/js/part/error.js";
+import * as Err from "../../../../src/js/part/error.js";
 
 describe("part/error.js: 例外クラス単体テスト", () => {
 

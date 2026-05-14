@@ -1,10 +1,10 @@
 import { describe, test, expect } from "bun:test";
-import { TyperEngine } from "../../../src/js/part/engine.js";
+import { TyperEngine } from "../../../../src/js/part/engine.js";
 import { 
     TyperTypeSpecError, 
     TyperBoxedPrimitiveValueError 
-} from "../../../src/js/part/error.js";
-import { i18n } from "../../../src/js/util/i18n/index.js";
+} from "../../../../src/js/part/error.js";
+import { i18n } from "../../../../src/js/util/i18n/index.js";
 
 // --- 1. テスト用実体の定義 (0.md + 境界値 + 異常系 + 内部パーツ用) ---
 

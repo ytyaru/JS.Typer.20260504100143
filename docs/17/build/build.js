@@ -72,6 +72,8 @@ async function run() {
             outdir: join(OUT_DIR, format, lang),
             naming: `bundle${minify ? ".min" : ""}.js`,
             plugins: [createI18nPlugin(lang)],
+            // 追記: IIFE 形式の時にグローバル変数名を付与する
+            globalName: "Typer"
         });
     });
 

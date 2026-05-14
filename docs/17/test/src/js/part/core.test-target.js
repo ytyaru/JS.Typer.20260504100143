@@ -1,10 +1,10 @@
-import { i18n } from '../../../src/js/util/i18n/index.js';
+import { i18n } from '../../../../src/js/util/i18n/index.js';
 import { 
     TyperTypeSpecError, 
     TyperBoxedPrimitiveValueError, 
     TyperInvalidObjectError, 
     TyperUnidentifiableError 
-} from '../../../src/js/part/error.js';
+} from '../../../../src/js/part/error.js';
 
 /**
  * 内部判定用の識別不能マーカー。
