@@ -1,0 +1,61 @@
+install.sh      +x
+tsconfig.json
+package.json
+README.md
+dist
+    browser     # --target browser
+        esm         # --format esm
+            ja
+                bundle.js
+                bundle.min.js
+            en
+                bundle.js
+                bundle.min.js
+        iife        # --format iife
+            ja
+                bundle.js
+                bundle.min.js
+            en
+                bundle.js
+                bundle.min.js
+docs
+    typedoc
+        files/              # 出力先
+        build/              # 出力用スクリプト
+            fix-typedoc-links.js
+            build.sh        +x
+            typedoc.json
+build
+    build.sh +x
+    build.js
+src
+    js
+        main.js             # エントリポイント（Typerクラス）
+        part/               # ライブラリの内部部品（非公開）
+            error.js          # 例外クラス定義
+            core.js           # 識別（Identity, TypeSpec, ActualValue）
+            engine.js         # 判定ロジック（true/false）
+            resolver.js       # 解決（例外ラップ・ルーティング）
+        util/               # 内部ユーティリティ
+            i18n/             # 言語定義（将来用）
+                index.js        # ダミー
+                ja.js
+                en.js
+        lib/                # 外部ライブラリ（現在は空）
+test/
+    test.sh         +x
+    test.js             # 言語・ファイルを動的にスキャンしテストを回す司令塔
+    js/
+        main.js             # エントリポイント（Typerクラス）
+        part/               # ライブラリの内部部品（非公開）
+            error.js          # 例外クラス定義
+            core.js           # 識別（Identity, TypeSpec, ActualValue）
+            engine.js         # 判定ロジック（true/false）
+            resolver.js       # 解決（例外ラップ・ルーティング）
+        util/               # 内部ユーティリティ
+            i18n/             # 言語定義（将来用）
+                index.js        # ダミー
+                ja.js
+                en.js
+        lib/                # 外部ライブラリ（現在は空）
+
