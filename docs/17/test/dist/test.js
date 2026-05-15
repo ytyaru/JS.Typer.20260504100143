@@ -19,13 +19,17 @@ class DistTestOrchestrator {
      * 実行メイン処理
      */
     run() {
+        // 追加: 最後に表示するために引数を保持
+        const specArg = process.argv[2] || "all";
+        const pathArg = process.argv[3] || "all";
+
         try {
             // 1. 引数の解析
             const spec = this.#parseBundleSpec(process.argv[2]);
             const testPattern = this.#parseTestPath(process.argv[3]);
 
             // 2. マトリックス実行
-            this.#executeMatrix(spec, testPattern);
+            this.#executeMatrix(spec, testPattern, specArg, pathArg);
         } catch (error) {
             console.error(`❌ [dist] 設定エラー: ${error.message}`);
             process.exit(1);
@@ -90,7 +94,7 @@ class DistTestOrchestrator {
     /**
      * マトリックスに基づいてテストを順次実行
      */
-    #executeMatrix(spec, testPattern) {
+    #executeMatrix(spec, testPattern, specArg, pathArg) {
         for (const format of spec.formats) {
             for (const lang of spec.langs) {
                 for (const isMin of spec.minifieds) {
@@ -105,7 +109,7 @@ class DistTestOrchestrator {
                 }
             }
         }
-        console.log(`\n✅ [dist] すべてのテスト工程が完了しました。`);
+        console.log(`\n✅ [dist] テスト工程が完了しました。 [指定: ${specArg}, ${pathArg}]`);
     }
 
     /**

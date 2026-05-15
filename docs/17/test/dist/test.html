@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Typer IIFE 動作確認</title>
+    <!-- ビルド済みの非圧縮・日本語版を指定 -->
+    <script src="../../dist/browser/iife/ja/bundle.js"></script>
+</head>
+<body>
+    <h1>Typer IIFE 動作確認</h1>
+    <div id="result"></div>
+
+    <script>
+        const display = (msg, isError = false) => {
+            const div = document.createElement('div');
+            div.style.color = isError ? 'red' : 'green';
+            div.textContent = msg;
+            document.getElementById('result').appendChild(div);
+        };
+
+        try {
+            // 1. グローバル変数の存在確認
+            if (typeof Typer === 'undefined') {
+                throw new Error("Typer がグローバルスコープに見つかりません。");
+            }
+            display("✅ Typer オブジェクトを検出しました。");
+
+            // 2. 基本的な判定テスト
+            const res1 = Typer.is(Number, 123);
+            display("✅ Typer.is(Number, 123) -> " + res1);
+
+            // 3. 継承判定テスト
+            class C {}
+            class D extends C {}
+            const res2 = Typer.of(C, new D());
+            display("✅ Typer.of(C, new D()) -> " + res2);
+
+            // 4. エラーメッセージの確認
+            try {
+                Typer.is(String, 123, "テスト");
+            } catch (e) {
+                display("✅ 例外メッセージ確認: " + e.message);
+            }
+
+        } catch (e) {
+            display("❌ エラー発生: " + e.message, true);
+            console.error(e);
+        }
+    </script>
+</body>
+</html>
+

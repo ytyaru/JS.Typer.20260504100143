@@ -7,6 +7,26 @@ const PROJECT_ROOT = resolve(import.meta.dir, "..");
 const SRC_DIR = join(PROJECT_ROOT, "src/js");
 const I18N_DIR = join(SRC_DIR, "util/i18n");
 const OUT_DIR = join(PROJECT_ROOT, "dist/browser");
+/**
+ * Bun がサボっている「グローバルへの露出」を強制するプラグイン
+ */
+const iifeGlobalPlugin = {
+    name: "iife-global-expose",
+    setup(build) {
+        // main.js（エントリポイント）の読み込み時に処理を挟む
+        build.onLoad({ filter: /main\.js$/ }, async (args) => {
+            const text = await Bun.file(args.path).text();
+            // コードの末尾に、グローバルへの代入を追記する
+            // これにより、IIFEの関数スコープの中から globalThis に Typer が登録される
+            const injection = `\nif (typeof globalThis !== 'undefined') { globalThis.Typer = Typer; }`;
+            return {
+                contents: text + injection,
+                loader: "js",
+            };
+        });
+    },
+};
+
 
 /**
  * 言語ディレクトリから有効な言語リスト（ja, en等）を自動取得する
@@ -63,6 +83,7 @@ async function run() {
     console.log(`📦 検出された言語: ${langs.join(", ")}`);
     console.log(`🛠️  ${configs.length} 個のビルドタスクを開始します...`);
 
+    /*
     const builds = configs.map(({ format, minify, lang }) => {
         return build({
             entrypoints: [join(SRC_DIR, "main.js")],
@@ -73,6 +94,27 @@ async function run() {
             naming: `bundle${minify ? ".min" : ""}.js`,
             plugins: [createI18nPlugin(lang)],
             // 追記: IIFE 形式の時にグローバル変数名を付与する
+            globalName: "Typer"
+        });
+    });
+    */
+    const builds = configs.map(({ format, minify, lang }) => {
+        const plugins = [createI18nPlugin(lang)];
+        
+        // IIFE 形式の時だけ、手動露出プラグインを有効にする
+        if (format === "iife") {
+            plugins.push(iifeGlobalPlugin);
+        }
+
+        return build({
+            entrypoints: [join(SRC_DIR, "main.js")],
+            target: "browser",
+            format: format,
+            minify: minify,
+            outdir: join(OUT_DIR, format, lang),
+            naming: `bundle${minify ? ".min" : ""}.js`,
+            plugins: plugins,
+            // globalName は効かないことが分かったが、将来のアップデートのために残しておく
             globalName: "Typer"
         });
     });

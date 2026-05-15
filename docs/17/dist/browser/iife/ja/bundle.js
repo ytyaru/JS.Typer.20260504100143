@@ -404,4 +404,7 @@
       return Typer.of(typeSpecifier, actualValue, label, this._.throwable);
     }
   }
+  if (typeof globalThis !== "undefined") {
+    globalThis.Typer = Typer;
+  }
 })();

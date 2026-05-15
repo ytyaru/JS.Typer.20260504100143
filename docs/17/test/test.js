@@ -10,28 +10,20 @@ class TestDispatcher {
         this.validModes = ["src", "dist"];
     }
 
-    /*
     run() {
         const mode = process.argv[2];
         const remainingArgs = process.argv.slice(3);
 
-        try {
-            this.#validateMode(mode);
-            this.#delegate(mode, remainingArgs);
-        } catch (error) {
-            console.error(`❌ 起動エラー: ${error.message}`);
+        // ヘルプ表示の追加
+        if (mode === "--help" || mode === "-h") {
             this.#printUsage();
-            process.exit(1);
+            return;
         }
-    }
-    */
-    run() {
-        const mode = process.argv[2];
-        const remainingArgs = process.argv.slice(3);
 
         try {
-            // 修正：引数がない、または "all" の場合は両モードを順次実行
+            // 修正: 引数がない、または "all" の場合は両モードを順次実行
             if (!mode || mode === "all") {
+                console.log("🚀 全モードのテストを開始します...");
                 this.#delegate("src", remainingArgs);
                 this.#delegate("dist", remainingArgs);
                 return;
@@ -71,14 +63,20 @@ class TestDispatcher {
     #printUsage() {
         console.log(`
 使用法:
-  ./test.sh src <build_spec> <test_path>
-  ./test.sh dist <build_spec>
+  ./test.sh <mode> <build_spec> <test_path>
+  ./test.sh --help
+
+引数:
+  mode:       "src" (原本テスト) または "dist" (成果物テスト)。省略時は両方。
+  build_spec: "format/lang/[min]" (例: "esm/ja/min") または "all"。省略時は全言語・全形式。
+  test_path:  "test/js/" 以降のパス (例: "part/error.js") または "all"。省略時は全ファイル。
 
 例:
-  ./test.sh src esm/ja/ part/error
-  ./test.sh dist esm/ja/min
+  ./test.sh src esm/ja/ part/error.js
+  ./test.sh dist all
         `);
     }
+
 }
 
 new TestDispatcher().run();

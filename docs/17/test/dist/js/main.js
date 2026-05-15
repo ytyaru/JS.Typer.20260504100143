@@ -5,20 +5,32 @@ import { data, C, c, D, d } from "../../data.js";
  * ビルド成果物（bundle.js）の最終疎通確認テスト
  */
 
-// 1. 環境変数からテスト対象のバンドルを動的にインポート
-//const { Typer } = await import(process.env.TEST_BUNDLE_PATH);
-// 1. バンドルのインポート
-const bundle = await import(process.env.TEST_BUNDLE_PATH);
+// 1. 環境変数からテスト対象のパスを取得
+const bundlePath = process.env.TEST_BUNDLE_PATH;
+let Typer;
 
-// 2. 修正：ESMならエクスポートから、IIFEならグローバルから取得
-const Typer = bundle.Typer || globalThis.Typer;
-
-if (!Typer) {
-    throw new Error(`Typer クラスの取得に失敗しました: ${process.env.TEST_BUNDLE_PATH}`);
+// 2. 形式（ESM/IIFE）に応じてロード方法を切り替える
+if (bundlePath.includes("/esm/")) {
+    // ESM形式: 名前付きエクスポートから取得
+    const bundle = await import(bundlePath);
+    Typer = bundle.Typer;
+} else {
+    // IIFE形式: 
+    // 1. 以前のテストによる globalThis.Typer の残骸を掃除
+    delete globalThis.Typer;
+    // 2. 成果物をインポート（実行され、プラグインが注入した globalThis.Typer = Typer が走る）
+    await import(bundlePath);
+    // 3. グローバルから取得
+    Typer = globalThis.Typer;
 }
 
-// 2. 比較用の「正解」メッセージを原本（src）からインポート
+if (!Typer) {
+    throw new Error(`Typer クラスの取得に失敗しました: ${bundlePath}`);
+}
+
+// 3. 比較用の「正解」メッセージを原本（src）からインポート
 const { i18n } = await import(`../../../src/js/util/i18n/${process.env.TEST_LANG}.js`);
+
 
 describe(`成果物検証: ${process.env.TEST_BUNDLE_PATH}`, () => {
 

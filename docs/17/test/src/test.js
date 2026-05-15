@@ -21,6 +21,10 @@ class SrcTestOrchestrator {
      * 実行メイン処理
      */
     run() {
+        // 追加: 最後に表示するために引数を保持
+        const specArg = process.argv[2] || "all";
+        const pathArg = process.argv[3] || "all";
+
         try {
             // 1. 引数の解析
             const spec = this.#parseBundleSpec(process.argv[2]);
@@ -30,7 +34,7 @@ class SrcTestOrchestrator {
             this.#generateTestTarget();
 
             // 3. マトリックス実行
-            this.#executeMatrix(spec, testPattern);
+            this.#executeMatrix(spec, testPattern, specArg, pathArg);
         } catch (error) {
             console.error(`❌ [src] 設定エラー: ${error.message}`);
             process.exit(1);
@@ -70,11 +74,24 @@ class SrcTestOrchestrator {
     }
     #parseTestPath(pathArg) {
         if (!pathArg || pathArg === "all") {
-            // 修正：命名規則外のファイルをパスとして明示的に指定するため、ファイルリストを生成
-            const glob = new Glob("js/**/*.js");
-            return Array.from(glob.scanSync({ cwd: this.srcDir }))
-                .filter(file => !file.endsWith(".test-target.js"))
-                .map(file => `./${file}`);
+            // js ディレクトリ以下を再帰的にスキャン
+            const glob = new Glob("**/*.js");
+            const jsDir = join(this.srcDir, "js");
+            
+            const files = Array.from(glob.scanSync(jsDir))
+                .filter(file => {
+                    // util/i18n などのデータファイルを除外
+                    if (file.includes("util/i18n/")) return false;
+                    // 自動生成ファイルを除外
+                    if (file.endsWith(".test-target.js")) return false;
+                    return true;
+                })
+                .map(file => `./js/${file}`); // test/src からの相対パスに整形
+            
+            if (files.length === 0) {
+                throw new Error(`テストファイルが見つかりませんでした。検索ディレクトリ: ${jsDir}`);
+            }
+            return files;
         }
 
         const fullPath = join(this.testJsDir, pathArg);
@@ -97,7 +114,7 @@ class SrcTestOrchestrator {
         }
     }
 
-    #executeMatrix(spec, testPattern) {
+    #executeMatrix(spec, testPattern, specArg, pathArg) {
         console.log(`🌍 テスト対象言語: ${spec.langs.join(", ")}`);
 
         for (const format of spec.formats) {
@@ -107,23 +124,22 @@ class SrcTestOrchestrator {
                 }
             }
         }
-        console.log(`\n✅ [src] すべてのテスト工程が完了しました。`);
+        console.log(`\n✅ [src] テスト工程が完了しました。 [指定: ${specArg}, ${pathArg}]`);
     }
 
     #runBunTest(format, lang, isMin, testPattern) {
         const minLabel = isMin ? "圧縮(min)" : "非圧縮";
-        console.log(`\n🧪 実行: [${lang}] [${format}] [${minLabel}] -> ${testPattern}`);
+        const patternLabel = Array.isArray(testPattern) ? "全ファイル" : testPattern;
+        
+        console.log(`\n🧪 実行: [${lang}] [${format}] [${minLabel}] -> ${patternLabel}`);
 
-        // --preload ./setup.js により、メモリ上で i18n を差し替える
         const targets = Array.isArray(testPattern) ? testPattern : [testPattern];
         const result = spawnSync("bun", ["test", "--preload", "./setup.js", ...targets], {
             cwd: this.srcDir,
             stdio: "inherit",
             env: {
                 ...process.env,
-                TEST_LANG: lang,
-                // srcテストでも、必要に応じて成果物との比較ができるようパスを渡しておく
-                TEST_BUNDLE_PATH: `../../dist/browser/${format}/${lang}/bundle${isMin ? ".min" : ""}.js`
+                TEST_LANG: lang
             }
         });
 

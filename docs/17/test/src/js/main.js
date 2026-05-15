@@ -16,6 +16,7 @@ import { i18n } from "../../../src/js/util/i18n/index.js";
 // 修正: test/data.js へのパスは 2回遡る (../../)
 import { data, C, c, D, d, Integer, integer } from "../../data.js";
 
+/*
 // 1. 環境変数からテスト対象のバンドルを動的にインポート
 const bundle = await import(process.env.TEST_BUNDLE_PATH);
 
@@ -25,6 +26,7 @@ const Typer = bundle.Typer || globalThis.Typer;
 if (!Typer) {
     throw new Error(`Typer クラスの取得に失敗しました: ${process.env.TEST_BUNDLE_PATH}`);
 }
+*/
 
 describe("main.js: Typer クラス（ファサード）の網羅的検証", () => {
 
