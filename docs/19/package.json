@@ -1,0 +1,19 @@
+{
+  "name": "js-typer",
+  "version": "1.0.0",
+  "description": "A strict type validation library for JavaScript.",
+  "type": "module",
+  "scripts": {
+    "build": "cd build && ./build.sh",
+    "test": "cd test && ./test.sh",
+    "test:src": "cd test && ./test.sh src",
+    "test:dist": "cd test && ./test.sh dist",
+    "doc": "cd docs/typedoc/build && ./build.sh",
+    "all": "bun run build && bun run test && bun run doc"
+  },
+  "devDependencies": {
+    "typedoc": "^0.28.19",
+    "typedoc-plugin-inline-sources": "^1.3.0"
+  }
+}
+

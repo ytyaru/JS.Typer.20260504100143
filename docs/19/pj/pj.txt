@@ -1,0 +1,64 @@
+install.sh      +x
+tsconfig.json
+package.json
+README.md
+dist
+    browser     # --target browser
+        esm         # --format esm
+            ja
+                bundle.js
+                bundle.min.js
+            en
+                bundle.js
+                bundle.min.js
+        iife        # --format iife
+            ja
+                bundle.js
+                bundle.min.js
+            en
+                bundle.js
+                bundle.min.js
+docs
+    typedoc
+        files/              # 出力先
+        build/              # 出力用スクリプト
+            fix-typedoc-links.js
+            build.sh        +x
+            typedoc.json
+build
+    build.sh +x
+    build.js
+src
+    js
+        main.js             # エントリポイント（Typerクラス）
+        part/               # ライブラリの内部部品（非公開）
+            error.js          # 例外クラス定義
+            core.js           # 識別（Identity, TypeSpec, ActualValue）
+            engine.js         # 判定ロジック（true/false）
+            resolver.js       # 解決（例外ラップ・ルーティング）
+        util/               # 内部ユーティリティ
+            i18n/             # 言語定義（将来用）
+                index.js        # ダミー
+                ja.js
+                en.js
+        lib/                # 外部ライブラリ（現在は空）
+test
+    test.sh             +x  # 全体の入り口（src/dist の振り分け）
+    test.js                 # ルート・ディスパッチャ（引数解析と委譲）
+    data.js                 # 共通テストデータ（原本・成果物共通）
+    src/                    # 【原本テスト：ホワイトボックス】
+        test.js             # src用オーケストレーター（i18n仮想差し替え実行）
+        setup.js            # i18n仮想差し替え用 Bun プラグイン
+        gen-test-target.js  # core.test-target.js 生成スクリプト
+        js/                 # 内部構造まで徹底的に叩くテストコード
+            main.js
+            part/
+                error.js
+                core.js
+                core.test-target.js
+                engine.js
+                resolver.js
+    dist/                   # 【成果物テスト：ブラックボックス】
+        test.js             # dist用オーケストレーター（root/dist の全パターンを走査）
+        js/                 # 成果物としての振る舞いを確認するテストコード
+            main.js         # 公開APIの疎通・i18n埋め込み・Minify耐性の確認
