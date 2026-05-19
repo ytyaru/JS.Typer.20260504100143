@@ -43,7 +43,10 @@ a.p.num.u8 = (v)=> isIntBitRange(v,8,false);
 a.p.num.u16 = (v)=> isIntBitRange(v,16,false);
 a.p.num.u32 = (v)=> isIntBitRange(v,32,false);
 const within = (v,min,max,signed) => {
-  if (!signed && [v,min,max].some(x=>x<0)) throw new Error(``);
+  if (!a.p.bln(signed)) {throw new Error(`signedは真偽値であるべきです。`)}
+  const t = signed ? 'uint' : 'int'; // 符号なし(uint)が0以上、符号あり(int)が負数あり
+  if (![v,min,max].every(x=>a.p.num[t](x))) {throw new Error(`v,min,maxは全てa.p.num.${t}型であるべきです。`)}
+  return min<=v && v<=max;
 }
 a.p.num.int.within = (v,min,max)=> [v,min,max].every(x=>a.p.num.int(x)) && min<=v && v<=max;
 a.p.num.uint.within = (v,min,max)=> [v,min,max].every(x=>a.p.num.uint(x)) && min<=v && v<=max;
