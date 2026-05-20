@@ -4,6 +4,11 @@ const a = {};
 a.p = (v)=> !Object(v);
 a.r = (v)=> !!Object(v);
 a.c = (v)=> [null,undefined].some(x=>x===v) || Number.isNaN(v);
+a.b = (v)=> a.r(v) && [Boolean,Number,String].some(t=>t===v.constructor);
+// BoxedPrimitive
+a.b.b = (v)=> a.r(v) && Boolean===v.constructor;
+a.b.n = (v)=> a.r(v) && Number===v.constructor;
+a.b.s = (v)=> a.r(v) && String===v.constructor;
 // Constant 非活性定数(inactive constant) 使わないほうが良いかもしれない定数たち
 a.c.nul = (v)=> null===v;
 a.c.und = (v)=> undefined===v;
@@ -65,10 +70,34 @@ a.r.ary = (v)=> Array.isArray(v);
 const isObj = (v)=> null!==v && 'object'===typeof v;
 a.r.obj = (v)=> isObj(v) && Object.prototype===Object.getPrototypeOf(v);
 a.r.dic = (v)=> isObj(v) && null===Object.getPrototypeOf(v);
-a.r.obj.has = (v, ...keys)=> a.r.obj(v) && keys.every(k=>k in v);
-a.r.obj.hasOwn = (v, ...keys)=> a.r.obj(v) && keys.every(k=>Object.hasOwn(v, k));
-a.r.dic.has = (v, ...keys)=> a.r.dic(v) && keys.every(k=>k in v);
-a.r.dic.hasOwn = (v, ...keys)=> a.r.dic(v) && keys.every(k=>Object.hasOwn(v, k));
+class HasKeysVerifier {
+  static verify(v, keys, id) {
+    this.#validateTypeSpec(keys, id);
+    const isObjectValid = id.includes('.obj.') ? a.r.obj(v) : a.r.dic(v);
+    const predicateFn = id.endsWith('.hasOwn') ? Object.hasOwn : (obj, k) => k in obj;
+    return this.#matchValue(v, keys, isObjectValid, predicateFn);
+  }
+  static #validateTypeSpec(keys, id) {
+    if (keys.length === 0) {
+      throw new Error(`[a.js Error] ${id} のプロパティ名(...keys)が指定されていません。存在を確認したいキー名を1つ以上指定してください。`);
+    }
+    if (!keys.every(k => a.p.str(k) || a.p.sym(k))) {
+      throw new Error(`[a.js Error] ${id} のプロパティ名に不正な型が渡されました。キー名はすべてStringまたはSymbol型で指定してください。`);
+    }
+  }
+  static #matchValue(v, keys, isObjectValid, predicateFn) {
+    return isObjectValid ? keys.every(k => predicateFn(v, k)) : false;
+  }
+}
+// a.js 側の呼び出し口（圧倒的にクリーンな公開API）
+a.r.obj.has = (v, ...keys) => HasKeysVerifier.verify(v, keys, 'a.r.obj.has');
+a.r.obj.hasOwn = (v, ...keys) => HasKeysVerifier.verify(v, keys, 'a.r.obj.hasOwn');
+a.r.dic.has = (v, ...keys) => HasKeysVerifier.verify(v, keys, 'a.r.dic.has');
+a.r.dic.hasOwn = (v, ...keys) => HasKeysVerifier.verify(v, keys, 'a.r.dic.hasOwn');
+//a.r.obj.has = (v, ...keys)=> a.r.obj(v) && keys.every(k=>k in v);
+//a.r.obj.hasOwn = (v, ...keys)=> a.r.obj(v) && keys.every(k=>Object.hasOwn(v, k));
+//a.r.dic.has = (v, ...keys)=> a.r.dic(v) && keys.every(k=>k in v);
+//a.r.dic.hasOwn = (v, ...keys)=> a.r.dic(v) && keys.every(k=>Object.hasOwn(v, k));
 const getDes = (v)=> {
   if (!isObj(v)) return null;
   const validKeys = new Set('configurable enumerable writable value get set'.split(' '));
