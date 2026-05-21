@@ -1,21 +1,22 @@
 import { describe, test, expect } from 'bun:test';
 import {a} from './a.js';
 class Data {
-    static B(...blacks) {return this.#except([Boolean,Number,String], ...blacks).map(C=>new C())}
-    static C(...blacks) {return this.#except([null,undefined,NaN], ...blacks).map(v=>v)}
-    static P(...blacks) {return this.#except([false,1,'',1n,Symbol()], ...blacks).map(v=>v)}
-    static bln(...blacks) {return this.#except([true,false], ...blacks).map(v=>v)}
-    static num(...blacks) {return this.#except([-1,0,1,0.1,Infinity,-Infinity,Number.MAX_SAFE_INTEGER,Number.MAX_SAFE_INTEGER+1,Number.MIN_SAFE_INTEGER,Number.MIN_SAFE_INTEGER-1], ...blacks).map(v=>v)}
-    static big(...blacks) {return this.#except([-1n,0n,1n,BigInt(Number.MAX_SAFE_INTEGER),BigInt(Number.MAX_SAFE_INTEGER)+1n,BigInt(Number.MIN_SAFE_INTEGER),BigInt(Number.MIN_SAFE_INTEGER)-1n], ...blacks).map(v=>v)}
-    static str(...blacks) {return this.#except(['','a','あ'], ...blacks).map(v=>v)}
-    static sym(...blacks) {return this.#except(['','a','あ'], ...blacks).map(v=>Symbol(v))}
-    static int(...blacks) {return this.#except([-1,0,1,Number.MAX_SAFE_INTEGER,Number.MIN_SAFE_INTEGER], ...blacks).map(v=>v)}
-    static flt(...blacks) {return this.#except([-0.1,0.1], ...blacks).map(v=>v)}
+    static B(...blacks) {return this.#wrap(this.#except([Boolean,Number,String], ...blacks).map(C=>new C()))}
+    static C(...blacks) {return this.#data([null,undefined,NaN], ...blacks).map(v=>v)}
+    static P(...blacks) {return this.#data([false,0,'',0n,Symbol.for('a')], ...blacks).map(v=>v)}
+    static bln(...blacks) {return this.#data([true,false], ...blacks).map(v=>v)}
+    static num(...blacks) {return this.#data([-1,0,1,0.1,Infinity,-Infinity,Number.MAX_SAFE_INTEGER,Number.MAX_SAFE_INTEGER+1,Number.MIN_SAFE_INTEGER,Number.MIN_SAFE_INTEGER-1], ...blacks).map(v=>v)}
+    static big(...blacks) {return this.#data([-1n,0n,1n,BigInt(Number.MAX_SAFE_INTEGER),BigInt(Number.MAX_SAFE_INTEGER)+1n,BigInt(Number.MIN_SAFE_INTEGER),BigInt(Number.MIN_SAFE_INTEGER)-1n], ...blacks).map(v=>v)}
+    static str(...blacks) {return this.#data(['','a','あ'], ...blacks).map(v=>v)}
+    static sym(...blacks) {return this.#wrap(this.#except(['a','あ'], ...blacks).map(v=>Symbol.for(v)))}
+    static int(...blacks) {return this.#data([-1,0,1,Number.MAX_SAFE_INTEGER,Number.MIN_SAFE_INTEGER], ...blacks).map(v=>v)}
+    static flt(...blacks) {return this.#data([-0.1,0.1], ...blacks).map(v=>v)}
     static ctn() {return this.#wrap([[],{},Object.create(null)])}
     static obj() {return this.#wrap([{},Object.create(null)])}
     static cls() {return this.#wrap([class C{},Date,function C(){}])}
     static ins() {return this.#wrap([new (class C{})(),new Date(),new (function C(){})()])}
-    static #except(values, ...blacks) {return this.#wrap(values.filter(v=>!blacks.includes(v)));}
+    static #data(values, ...blacks) {return this.#wrap(this.#except(values, ...blacks))}
+    static #except(values, ...blacks) {return values.filter(v=>!blacks.includes(v));}
     static #wrap(values) {return values.map(v=>[v])}
 }
 describe('a.js', ()=>{
@@ -24,7 +25,6 @@ describe('a.js', ()=>{
         test('exist', () => expect(a.b).toBeInstanceOf(Function));
         test.each([[Boolean,false],[Number,1],[String,'']])('(%p)->T', (t,v) => expect(a.b(new t(v))).toBe(true));
         test.each([[Boolean,false],[Number,1],[String,'']])('(%p)->F', (t,v) => expect(a.b(t(v))).toBe(false));
-        //test.each([[false],[1],[''],[1n],[Symbol()]])('(%p)->F', (v) => expect(a.b(v)).toBe(false));
         test.each(Data.P())('(%p)->F', (v) => expect(a.b(v)).toBe(false));
         describe('a.b.bln', ()=>{
             test('true', ()=>expect(a.b.bln(new Boolean(false))).toBe(true));
@@ -41,23 +41,18 @@ describe('a.js', ()=>{
     });
     describe('a.c', ()=>{
         test('exist', () => expect(a.c).toBeInstanceOf(Function));
-        //test.each([[null],[undefined],[NaN]])('(%p)->T', (v) => expect(a.c(v)).toBe(true));
         test.each(Data.C())('(%p)->T', (v) => expect(a.c(v)).toBe(true));
-        //test.each([[false],[1],[''],[1n],[Symbol()],[new Date()]])('(%p)->F', (v) => expect(a.c(v)).toBe(false));
         test.each([...Data.P(),[new Date()]])('(%p)->F', (v) => expect(a.c(v)).toBe(false));
         describe('a.c.nul', ()=>{
             test('true', ()=>expect(a.c.nul(null)).toBe(true));
-            //test.each([[undefined],[NaN]])('false', (v)=>expect(a.c.nul(v)).toBe(false));
             test.each(Data.C(null))('false', (v)=>expect(a.c.nul(v)).toBe(false));
         });
         describe('a.c.und', ()=>{
             test('true', ()=>expect(a.c.und(undefined)).toBe(true));
-            //test.each([[null],[NaN]])('false', (v)=>expect(a.c.und(v)).toBe(false));
             test.each(Data.C(undefined))('false', (v)=>expect(a.c.und(v)).toBe(false));
         });
         describe('a.c.nan', ()=>{
             test('true', ()=>expect(a.c.nan(NaN)).toBe(true));
-            //test.each([[undefined],[null]])('false', (v)=>expect(a.c.nan(v)).toBe(false));
             test.each(Data.C(NaN))('false', (v)=>expect(a.c.nan(v)).toBe(false));
         });
     });
@@ -67,19 +62,19 @@ describe('a.js', ()=>{
         test.each([[null],[undefined],[NaN],[new Boolean()],[new Number()],[new String()],[new Date()],[{}],[[]],[()=>{}]])('(%p)->F', (v) => expect(a.p(v)).toBe(false));
         describe('.bln', ()=>{
             test('exist', () => expect(a.p.bln).toBeInstanceOf(Function));
-            test.each([[true],[false]])('true P(%p)', (v) => expect(a.p.bln(v)).toBe(true));
-            test.each([[true],[false]])('true F(%p)', (v) => expect(a.p.bln(Boolean(v))).toBe(true));
-            test.each([[true],[false]])('false B(%p)', (v) => expect(a.p.bln(new Boolean(v))).toBe(false));
-            test.each([[null],[undefined],[NaN],[1],[1n],[''],[Symbol()],[new Date()]])('false T(%p)', (v) => expect(a.p.bln(v)).toBe(false));
+            test.each(Data.bln())('true P(%p)', (v) => expect(a.p.bln(v)).toBe(true));
+            test.each(Data.bln())('true F(%p)', (v) => expect(a.p.bln(Boolean(v))).toBe(true));
+            test.each(Data.bln())('false B(%p)', (v) => expect(a.p.bln(new Boolean(v))).toBe(false));
+            test.each([...Data.C(), ...Data.P(false), ...Data.B(), [new Date()]])('false T(%p)', (v) => expect(a.p.bln(v)).toBe(false));
         });
         describe('.num', ()=>{
             test('exist', () => expect(a.p.num).toBeInstanceOf(Function));
-            test.each([[-1],[0],[1],[0.1],[Infinity],[Number.MAX_SAFE_INTEGER],[Number.MAX_SAFE_INTEGER+1]])('true P(%p)', (v) => expect(a.p.num(v)).toBe(true));
+            test.each(Data.num())('true P(%p)', (v) => expect(a.p.num(v)).toBe(true));
             test.each([['1']])('true F(%p)', (v) => expect(a.p.num(Number(v))).toBe(true));
             test.each([[null]])('true F(%p)', (v) => expect(a.p.num(Number(v))).toBe(true));// 0
             test.each([[undefined]])('true F(%p)', (v) => expect(a.p.num(Number(v))).toBe(false));// NaN
             test.each([[1],['1'],[undefined],[null]])('false B(%p)', (v) => expect(a.p.num(new Number(v))).toBe(false));
-            test.each([[null],[undefined],[NaN],[true],[false],[1n],[''],[Symbol()],[new Date()]])(`false T(%p)`, (v) => expect(a.p.num(v)).toBe(false));
+            test.each([...Data.C(), ...Data.P(0), ...Data.B(), ...Data.ins()])(`false T(%p)`, (v) => expect(a.p.num(v)).toBe(false));
         });
         describe('.big', ()=>{
             test('exist', () => expect(a.p.big).toBeInstanceOf(Function));
@@ -88,14 +83,14 @@ describe('a.js', ()=>{
 //            test.each([[null]])('true F(%p)', (v) => expect(a.p.big(BigInt(v))).toBe(true));// 0
 //            test.each([[undefined]])('true F(%p)', (v) => expect(a.p.big(BigInt(v))).toBe(false));// NaN
 //            test.each([[1],['1'],[undefined],[null]])('false B(%p)', (v) => expect(a.p.big(new BigInt(v))).toBe(false));
-            test.each([[null],[undefined],[NaN],[true],[false],[1],[''],[Symbol()],[new Date()]])(`false T(%p)`, (v) => expect(a.p.big(v)).toBe(false));
+            test.each([...Data.C(), ...Data.P(0n), ...Data.B(), ...Data.ins()])(`false T(%p)`, (v) => expect(a.p.big(v)).toBe(false));
         });
         describe('.str', ()=>{
             test('exist', () => expect(a.p.str).toBeInstanceOf(Function));
             test.each([[''],['a']])('true P(%p)', (v) => expect(a.p.str(v)).toBe(true));
             test.each([[''],['a']])('true F(%p)', (v) => expect(a.p.str(String(v))).toBe(true));
             test.each([[''],['a']])('false B(%p)', (v) => expect(a.p.str(new String(v))).toBe(false));
-            test.each([[null],[undefined],[NaN],[1],[1n],[Symbol()],[new Date()]])('false T(%p)', (v) => expect(a.p.str(v)).toBe(false));
+            test.each([...Data.C(), ...Data.P(''), ...Data.B(), ...Data.ins()])('false T(%p)', (v) => expect(a.p.str(v)).toBe(false));
         });
         describe('.sym', ()=>{
             test('exist', () => expect(a.p.sym).toBeInstanceOf(Function));
@@ -103,7 +98,7 @@ describe('a.js', ()=>{
             test.each(D)('true P(%p)', (v) => expect(a.p.sym(v)).toBe(true));
 //            test.each(D)('true F(%p)', (v) => expect(a.p.sym(Symbol(v))).toBe(true));
 //            test.each(D)('false B(%p)', (v) => expect(a.p.sym(new Symbol(v))).toBe(false));
-            test.each([[null],[undefined],[NaN],[1],[1n],[''],[new Date()]])('false T(%p)', (v) => expect(a.p.sym(v)).toBe(false));
+            test.each([...Data.C(), ...Data.P(Symbol.for('a')), ...Data.B(), ...Data.ins()])('false T(%p)', (v) => expect(a.p.sym(v)).toBe(false));
         });
     });
     describe('a.r', ()=>{
