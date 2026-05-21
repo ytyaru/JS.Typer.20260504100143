@@ -42,64 +42,86 @@ class IntBit {
     return [min, max];
   }
 }
-/*
-const getIntBitRange = (bit, signed = false) => {
-  if (!Number.isSafeInteger(bit) || bit<1 || 53<bit) throw new Error(`bitは1〜53までの整数であるべきです。`);
-  const min = signed ? -(2 ** (bit - 1)) : 0;
-  const max = signed ? 2 ** (bit - 1) - 1 : 2 ** bit - 1;
-  return [min, max];
-};
-const isIntBitRange = (v, bit, signed = false) => {
-  if (!Number.isSafeInteger(v)) throw new Error(`vはNumber.isSafeInteger(v)がtrueを返す値であるべきです。`);
-  const [min, max] = getIntBitRange(bit, signed);
-  return v >= min && v <= max;
-};
-a.p.num.int.bit = (v,bit)=> isIntBitRange(v,bit,true);
-a.p.num.uint.bit = (v,bit)=> isIntBitRange(v,bit,false);
-a.p.num.i8 = (v)=> isIntBitRange(v,8,true);
-a.p.num.i16 = (v)=> isIntBitRange(v,16,true);
-a.p.num.i32 = (v)=> isIntBitRange(v,32,true);
-a.p.num.u8 = (v)=> isIntBitRange(v,8,false);
-a.p.num.u16 = (v)=> isIntBitRange(v,16,false);
-a.p.num.u32 = (v)=> isIntBitRange(v,32,false);
-*/
 a.p.num.int.bit = (v,bit)=> IntBit.is(v,bit,true);
 a.p.num.uint.bit = (v,bit)=> IntBit.is(v,bit,false);
-/*
-a.p.num.i8 = (v)=> IntBit.is(v,8,true);
-a.p.num.i16 = (v)=> IntBit.is(v,16,true);
-a.p.num.i32 = (v)=> IntBit.is(v,32,true);
-a.p.num.u8 = (v)=> IntBit.is(v,8,false);
-a.p.num.u16 = (v)=> IntBit.is(v,16,false);
-a.p.num.u32 = (v)=> IntBit.is(v,32,false);
-*/
 const cartesian = (...arrays) => arrays.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
 cartesian([true,false],[8,16,32]).forEach(([signed,bit])=>a.p.num[`${signed ? 'i' : 'u'}${bit}`] = (v)=> IntBit.is(v,bit,signed));
 ;
-
-const within = (v,min,max,signed) => {
-  if (!a.p.bln(signed)) {throw new Error(`signedは真偽値であるべきです。`)}
-  const t = signed ? 'uint' : 'int'; // 符号なし(uint)が0以上、符号あり(int)が負数あり
-  if (![v,min,max].every(x=>a.p.num[t](x))) {throw new Error(`v,min,maxは全てa.p.num.${t}型であるべきです。`)}
-  return min<=v && v<=max;
+class IntRange {
+  static without(v,min,max,signed) {return !this.within(v,min,max,signed);}
+  static within(v,min,max,signed) {
+    this.#validType(v,min,max,signed);
+    return min<=v && v<=max;
+  }
+  static #validType(v,min,max,signed) {
+    if (!a.p.bln(signed)) {throw new Error(`signedは真偽値であるべきです。`)}
+    const t = signed ? 'uint' : 'int';
+    if(![v,min,max].every(x=>a.p.num[t](x))){throw new Error(`v,min,maxは全てa.p.num.${t}型であるべきです。`)}
+  }
 }
-//a.p.num.int.within = (v,min,max)=> [v,min,max].every(x=>a.p.num.int(x)) && min<=v && v<=max;
-//a.p.num.uint.within = (v,min,max)=> [v,min,max].every(x=>a.p.num.uint(x)) && min<=v && v<=max;
-//a.p.num.int.without = (v,min,max)=> [v,min,max].every(x=>a.p.num.int(x)) && (v<min || max<v);
-//a.p.num.uint.without = (v,min,max)=> [v,min,max].every(x=>a.p.num.uint(x)) && (v<min || max<v);
-a.p.num.int.within   = (v,min,max) => within(v,min,max,false);
-a.p.num.uint.within  = (v,min,max) => within(v,min,max,true);
-a.p.num.int.without  = (v,min,max) => !within(v,min,max,false);
-a.p.num.uint.without = (v,min,max) => !within(v,min,max,true);
+a.p.num.int.within   = (v,min,max) => IntRange.within(v,min,max,false);
+a.p.num.uint.within  = (v,min,max) => IntRange.within(v,min,max,true);
+a.p.num.int.without  = (v,min,max) => IntRange.without(v,min,max,false);
+a.p.num.uint.without = (v,min,max) => IntRange.without(v,min,max,true);
+a.p.big.i = (v)=> a.p.big(v);
+a.p.big.u = (v)=> a.p.big(v) && 0n<=v;
+class BigBit {
+  static is(v, bit, signed=false) {return this.#isBigBitRange(v, bit, signed = false)}
+  static #isBigBitRange(v, bit, signed = false) {
+    if (!a.p.big(v)) throw new Error(`vはBigIntであるべきです。`);
+    const [min, max] = this.#calcMinMax(bit, signed);
+    return v >= min && v <= max;
+  }
+  static #calcMinMax(bit, signed = false) {
+    if (!a.p.num.int(bit) || bit<54) throw new Error(`bitは54以上の整数であるべきです。`);
+    if (!a.p.bln(signed)) {throw new Error(`signedは真偽値であるべきです。`)}
+    bit = BigInt(bit);
+    const min = signed ? -(2n ** (bit - 1n)) : 0n;
+    const max = signed ? 2n ** (bit - 1n) - 1n : 2n ** bit - 1n;
+    return [min, max];
+  }
+}
+a.p.big.i.bit = (v,bit)=> BigBit.is(v,bit,true);
+a.p.big.u.bit = (v,bit)=> BigBit.is(v,bit,false);
+cartesian([true,false],[64,128,256]).forEach(([signed,bit])=>a.p.big[`${signed ? 'i' : 'u'}${bit}`] = (v)=> BigBit.is(v,bit,signed));
+;
+class BigRange {
+  static without(v,min,max,signed) {return !this.within(v,min,max,signed);}
+  static within(v,min,max,signed) {
+    this.#validType(v,min,max,signed);
+    return min<=v && v<=max;
+  }
+  static #validType(v,min,max,signed) {
+    if (!a.p.bln(signed)) {throw new Error(`signedは真偽値であるべきです。`)}
+    const t = signed ? 'uint' : 'int';
+    if(![v,min,max].every(x=>a.p.big[t](x))){throw new Error(`v,min,maxは全てa.p.big.${t}型であるべきです。`)}
+  }
+}
+a.p.big.i.within   = (v,min,max) => BigRange.within(v,min,max,false);
+a.p.big.u.within  = (v,min,max) => BigRange.within(v,min,max,true);
+a.p.big.i.without  = (v,min,max) => BigRange.without(v,min,max,false);
+a.p.big.u.without = (v,min,max) => BigRange.without(v,min,max,true);
 a.p.str.blk = (v)=> a.p.str(v) && 0===v.length;
 a.p.str.some = (v,...candidates)=> a.p.str(v) && candidates.every(x=>a.p.str(x)) && candidates.some(x=>x===v);
+a.p.str.pat = (v,R)=> {
+    if (!(R instanceof RegExp)) {throw new Error(`Rは正規表現であるべきです。`)}
+    return R.test(v);
+}
 // Reference
 a.r.cls = (v)=> 'function'===typeof v && 0<v.name?.length && /^[A-Z]/.test(v.name);
+a.r.cls.err = (v)=> a.r.cls(v) && Error.prototype.isPrototypeOf(v.prototype);
+a.r.cls.is = (v, C) => a.r.cls(v) && v === C;
+a.r.cls.of = (v, C) => a.r.cls(v) && (v === C || C.prototype.isPrototypeOf(v.prototype));
+a.r.cls.is.some = (v, ...Cs) => Cs.some(C=>a.r.cls.is(v));
+a.r.cls.of.some = (v, ...Cs) => Cs.some(C=>a.r.cls.of(v));
 a.r.cal = (v)=> 'function'===typeof v;
 a.r.ary = (v)=> Array.isArray(v);
+a.r.ary.blk = (v)=> a.r.ary(v) && 0===v.length;
 const isObj = (v)=> null!==v && 'object'===typeof v;
 a.r.obj = (v)=> isObj(v) && Object.prototype===Object.getPrototypeOf(v);
 a.r.dic = (v)=> isObj(v) && null===Object.getPrototypeOf(v);
+a.r.obj.blk = (v)=> a.r.obj(v) && 0===Object.keys(v).length;
+a.r.dic.blk = (v)=> a.r.dic(v) && 0===Object.keys(v).length;
 class HasKeysVerifier {
   static #validIds = ['a.r.obj.has', 'a.r.obj.hasOwn', 'a.r.dic.has', 'a.r.dic.hasOwn'];
   static verify(v, keys, id) {
@@ -133,36 +155,45 @@ a.r.dic.has = (v, ...keys) => HasKeysVerifier.verify(v, keys, 'a.r.dic.has');
 a.r.dic.hasOwn = (v, ...keys) => HasKeysVerifier.verify(v, keys, 'a.r.dic.hasOwn');
 // 破綻オブジェクト（参照型なのにconstructorもnameもないから型名取得できない。dicがそれだがdicとは別扱い）
 a.r.invalid = (v)=> a.r(v) && v?.constructor && v?.constructor?.name;
-//a.r.obj.has = (v, ...keys)=> a.r.obj(v) && keys.every(k=>k in v);
-//a.r.obj.hasOwn = (v, ...keys)=> a.r.obj(v) && keys.every(k=>Object.hasOwn(v, k));
-//a.r.dic.has = (v, ...keys)=> a.r.dic(v) && keys.every(k=>k in v);
-//a.r.dic.hasOwn = (v, ...keys)=> a.r.dic(v) && keys.every(k=>Object.hasOwn(v, k));
-const getDes = (v)=> {
-  if (!isObj(v)) return null;
-  const validKeys = new Set('configurable enumerable writable value get set'.split(' '));
-  const keys = Object.keys(v);
-  const hasInvalidKey = keys.some(k=>!validKeys.has(k));
-  if (hasInvalidKey) return null;
-  const isDataDescriptor = 'value' in v || 'writable' in v;
-  const isGetter = 'get' in v;
-  const isSetter = 'set' in v;
-  const dat = 'function'===typeof v.value ? 'function' : 'data';
-  const acc = isGetter && isSetter ? 'accessor' : (!isGetter && !isSetter ? null : (isGetter ? 'get' : 'set'));
-  if (isDataDescriptor && (isGetter || isSetter)) return null;
-  return isDataDescriptor ? dat : acc;
+class Descriptor {
+  static is(v) {return !!this.#get(v)}
+  static isDat(v) {return ['data','function'].some(x=>x===getDes(v));}
+  static isDatV(v) {return 'data'===getDes(v);}
+  static isDatF(v) {return 'function'===getDes(v);}
+  static isAcc(v) {return ['accessor','get','set'].some(x=>x===getDes(v));}
+  static isAccG(v) {return 'get'===getDes(v);}
+  static isAccS(v) {return 'set'===getDes(v);}
+  static isAccGS(v) {return 'accessor'===getDes(v);}
+  static #get(v) {
+    if (!isObj(v)) return null;
+    const validKeys = new Set('configurable enumerable writable value get set'.split(' '));
+    const keys = Object.keys(v);
+    const hasInvalidKey = keys.some(k=>!validKeys.has(k));
+    if (hasInvalidKey) return null;
+    const isDataDescriptor = 'value' in v || 'writable' in v;
+    const isG = 'get' in v;
+    const isS = 'set' in v;
+    const dat = 'function'===typeof v.value ? 'function' : 'data';
+    const acc = isG && isS ? 'accessor' : (!isG && !isS ? null : (isG ? 'get' : 'set'));
+    if (isDataDescriptor && (isG || isS)) return null;
+    return isDataDescriptor ? dat : acc;
+  }
 }
-a.r.des = (v)=> !!getDes(v);
-a.r.des.dat = (v)=> ['data','function'].some(x=>x===getDes(v));
-a.r.des.dat.v = (v)=> 'data'===getDes(v);
-a.r.des.dat.fn = (v)=> 'function'===getDes(v);
-a.r.des.acc = (v)=> ['accessor','get','set'].some(x=>x===getDes(v));
-a.r.des.acc.get = (v)=> 'get'===getDes(v);
-a.r.des.acc.set = (v)=> 'set'===getDes(v);
-a.r.des.acc.gs = (v)=> 'accessor'===getDes(v);
+a.r.des = (v)=> Descriptor.is(v);
+a.r.des.dat = (v)=> Descriptor.isDat(v);
+a.r.des.dat.v = (v)=> Descriptor.isDatV(v);
+a.r.des.dat.fn = (v)=> Descriptor.isDatF(v);
+a.r.des.acc = (v)=> Descriptor.isAcc(v);
+a.r.des.acc.get = (v)=> Descriptor.isAccG(v);
+a.r.des.acc.set = (v)=> Descriptor.isAccS(v);
+a.r.des.acc.gs = (v)=> Descriptor.isAccGS(v);
 a.r.ins = (v)=> a.r(v) && !a.r.cal(v) && !a.r.ary(v) && !a.r.dic(v) && !a.r.obj(v) && !a.r.des(v);
+a.r.ins.err = (v)=> a.r.ins.of(v,Error);
 a.r.ins.of = (v,C)=> a.r.ins(v) && v instanceof C;
 a.r.ins.is = (v,C)=> a.r.ins.of(v,C) && C===v.constructor;
-a.r.ins.err = (v)=> a.r.ins.of(v,Error);
+a.r.ins.is.some = (v, ...Cs) => Cs.some(C=>a.r.ins.is(v));
+a.r.ins.of.some = (v, ...Cs) => Cs.some(C=>a.r.ins.of(v));
+
 const fnSrc = (v)=> Function.prototype.toString.call(v);
 a.r.cal.arrow = (v)=> a.r.cal(v) && (!v.hasOwnProperty('prototype') && fnSrc(v).includes('=>'));
 a.r.cal.method = (v)=> a.r.cal(v) && (!v.hasOwnProperty('prototype') && !fnSrc(v).startsWith('function'));
@@ -226,7 +257,4 @@ const isThenable = (v) => a.r(v) && 'function' === typeof v.then;
 a.r.then = (v) => isThenable(v);
 a.r.obj.then = (v) => a.r.obj(v) && isThenable(v);
 a.r.ins.then = (v) => a.r.ins(v) && isThenable(v);
-a.r.cls.err = (v)=> a.r.cls(v) && Error.prototype.isPrototypeOf(v.prototype);
-a.r.cls.is = (v, C) => a.r.cls(v) && v === C;
-a.r.cls.of = (v, C) => a.r.cls(v) && (v === C || C.prototype.isPrototypeOf(v.prototype));
 export {a};
