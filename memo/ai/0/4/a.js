@@ -119,11 +119,33 @@ a.r.cls.is.some = (v, ...Cs) => Cs.some(C=>a.r.cls.is(v));
 a.r.cls.of.some = (v, ...Cs) => Cs.some(C=>a.r.cls.of(v));
 a.r.cal = (v)=> 'function'===typeof v;
 a.r.ary = (v)=> Array.isArray(v);
-a.r.ary.blk = (v)=> a.r.ary(v) && 0===v.length;
+a.r.ary.blk = (v)=> a.r.ary(v) && 0===v?.length;
+a.r.ary.is = (v)=> a.r.ary(v) && Array===v?.constructor;
+a.r.ary.of = (v)=> a.r.ary(v);
+a.r.ary.g = (v,C)=> {// generics
+    if (!a.r.cls(C)) {throw new Error(`Cはクラスであるべきです。`)}
+    //return a.r.ary(v) && v?.every(x=>x instanceof C);
+    return a.r.ary(v) && v?.every(x=>C===x.constructor || x instanceof C);
+};
+a.r.ary.bit = (v)=> [Int8Array,Uint8Array,Uint8ClampedArray,Int16Array,Uint16Array,Int32Array,Uint32Array,Float16Array,Float32Array,Float64Array,BigInt64Array,BigUint64Array].some(C=>v instanceof C);
+a.r.ary.i8 = (v)=> v instanceof Int8Array;
+a.r.ary.i16 = (v)=> v instanceof Int16Array;
+a.r.ary.i32 = (v)=> v instanceof Int32Array;
+a.r.ary.u8 = (v)=> v instanceof Uint8Array;
+a.r.ary.u8c = (v)=> v instanceof Uint8ClampedArray;
+a.r.ary.u16 = (v)=> v instanceof Uint16Array;
+a.r.ary.u32 = (v)=> v instanceof Uint32Array;
+a.r.ary.f16 = (v)=> v instanceof Float16Array;
+a.r.ary.f32 = (v)=> v instanceof Float32Array;
+a.r.ary.f64 = (v)=> v instanceof Float64Array;
+a.r.ary.i64 = (v)=> v instanceof BigInt8Array;
+a.r.ary.u64 = (v)=> v instanceof BigUint8Array;
 a.r.obj = (v)=> isObj(v) && Object.prototype===Object.getPrototypeOf(v);
 a.r.dic = (v)=> isObj(v) && null===Object.getPrototypeOf(v);
 a.r.obj.blk = (v)=> a.r.obj(v) && 0===Object.keys(v).length;
 a.r.dic.blk = (v)=> a.r.dic(v) && 0===Object.keys(v).length;
+a.r.obj.is = (v)=> a.r.obj(v);
+a.r.obj.of = (v)=> a.r.obj(v) && v instanceof Object;
 class HasKeysVerifier {
   static #validIds = ['a.r.obj.has', 'a.r.obj.hasOwn', 'a.r.dic.has', 'a.r.dic.hasOwn'];
   static verify(v, keys, id) {
@@ -166,16 +188,22 @@ class Descriptor {
   static isAccGS(v) {return 'accessor'===getDes(v);}
   static #get(v) {
     if (!isObj(v)) return null;
+    //if (!isObj(v)) {throw new Error(`vはオブジェクトであるべきです。`)};
+    console.log('isObj------------------------');
     const validKeys = new Set('configurable enumerable writable value get set'.split(' '));
     const keys = Object.keys(v);
     const hasInvalidKey = keys.some(k=>!validKeys.has(k));
     if (hasInvalidKey) return null;
+    //if (hasInvalidKey) {throw new Error(`vは所定のプロパティを持っているべきです。:${validKeys.join(',')}`)};
+    console.log('hasInvalidKey------------------------');
     const isDataDescriptor = 'value' in v || 'writable' in v;
     const isG = 'get' in v;
     const isS = 'set' in v;
     const dat = 'function'===typeof v.value ? 'function' : 'data';
     const acc = isG && isS ? 'accessor' : (!isG && !isS ? null : (isG ? 'get' : 'set'));
     if (isDataDescriptor && (isG || isS)) return null;
+//    if (isDataDescriptor && (isG || isS)) {throw new Error(`データ／アクセサの両プロパティを保有しています。どちらか一方であるべきです。`)};
+    console.log('isDataDescriptor && (isG || isS)------------------------', isDataDescriptor ? dat : acc, isDataDescriptor, isG, isS, v);
     return isDataDescriptor ? dat : acc;
   }
 }
@@ -253,7 +281,7 @@ a.r.cal.fn.some     = (v, options) => FunctionAttributeVerifier.verify(v, option
 a.r.cal.method.some = (v, options) => FunctionAttributeVerifier.verify(v, options, 'a.r.cal.method.some');
 a.r.cal.arrow.some  = (v, options) => FunctionAttributeVerifier.verify(v, options, 'a.r.cal.arrow.some');
 // 4. Thenable (a.r.then / .obj.then / .ins.then) の判定// Promises/A+ 仕様に基づく: オブジェクトまたは関数で、かつ then が関数であること
-const isThenable = (v) => a.r(v) && 'function' === typeof v.then;
+const isThenable = (v) => a.r(v) && 'function' === typeof v?.then;
 a.r.then = (v) => isThenable(v);
 a.r.obj.then = (v) => a.r.obj(v) && isThenable(v);
 a.r.ins.then = (v) => a.r.ins(v) && isThenable(v);

@@ -1,20 +1,55 @@
 import { describe, test, expect } from 'bun:test';
 import {a} from './a.js';
 class Data {
+    //static #all = 'B C bln num big str sym ctn cls ins des cal'.split(' ');
+    static #all = 'B C bln num big str sym obj ary cls fn ins des'.split(' ');
+    static all(names, ...blacks) {return (Array.isArray(names) ? names : this.#all).flatMap(n=>this[n](...blacks));}
+    static without(...blacks) {return this.all(this.#except(this.#all, ...blacks))}
     static B(...blacks) {return this.#wrap(this.#except([Boolean,Number,String], ...blacks).map(C=>new C()))}
-    static C(...blacks) {return this.#data([null,undefined,NaN], ...blacks).map(v=>v)}
-    static P(...blacks) {return this.#data([false,0,'',0n,Symbol.for('a')], ...blacks).map(v=>v)}
-    static bln(...blacks) {return this.#data([true,false], ...blacks).map(v=>v)}
-    static num(...blacks) {return this.#data([-1,0,1,0.1,Infinity,-Infinity,Number.MAX_SAFE_INTEGER,Number.MAX_SAFE_INTEGER+1,Number.MIN_SAFE_INTEGER,Number.MIN_SAFE_INTEGER-1], ...blacks).map(v=>v)}
-    static big(...blacks) {return this.#data([-1n,0n,1n,BigInt(Number.MAX_SAFE_INTEGER),BigInt(Number.MAX_SAFE_INTEGER)+1n,BigInt(Number.MIN_SAFE_INTEGER),BigInt(Number.MIN_SAFE_INTEGER)-1n], ...blacks).map(v=>v)}
-    static str(...blacks) {return this.#data(['','a','あ'], ...blacks).map(v=>v)}
+    static C(...blacks) {return this.#data([null,undefined,NaN], ...blacks)}
+    static P(...blacks) {return this.#data([false,0,'',0n,Symbol.for('a')], ...blacks)}
+    static bln(...blacks) {return this.#data([true,false], ...blacks)}
+    static num(...blacks) {return this.#data([-1,0,1,0.1,Infinity,-Infinity,Number.MAX_SAFE_INTEGER,Number.MAX_SAFE_INTEGER+1,Number.MIN_SAFE_INTEGER,Number.MIN_SAFE_INTEGER-1], ...blacks)}
+    static big(...blacks) {return this.#data([-1n,0n,1n,BigInt(Number.MAX_SAFE_INTEGER),BigInt(Number.MAX_SAFE_INTEGER)+1n,BigInt(Number.MIN_SAFE_INTEGER),BigInt(Number.MIN_SAFE_INTEGER)-1n], ...blacks)}
+    static str(...blacks) {return this.#data(['','a','あ'], ...blacks)}
     static sym(...blacks) {return this.#wrap(this.#except(['a','あ'], ...blacks).map(v=>Symbol.for(v)))}
-    static int(...blacks) {return this.#data([-1,0,1,Number.MAX_SAFE_INTEGER,Number.MIN_SAFE_INTEGER], ...blacks).map(v=>v)}
-    static flt(...blacks) {return this.#data([-0.1,0.1], ...blacks).map(v=>v)}
+    static int(...blacks) {return this.#data([-1,0,1,Number.MAX_SAFE_INTEGER,Number.MIN_SAFE_INTEGER], ...blacks)}
+    static flt(...blacks) {return this.#data([-0.1,0.1], ...blacks)}
     static ctn() {return this.#wrap([[],{},Object.create(null)])}
+    static ary() {return this.#wrap([[], new (class A extends Array{})()])}
     static obj() {return this.#wrap([{},Object.create(null)])}
-    static cls() {return this.#wrap([class C{},Date,function C(){}])}
-    static ins() {return this.#wrap([new (class C{})(),new Date(),new (function C(){})()])}
+    static cls() {return this.#wrap([Date,function C(){},class C{},this.#C,this.#D])}
+    static ins() {return this.#wrap([new Date(),new (function C(){})(),new (class C{})(),this.#c,this.#d])}
+    static #desV = Object.defineProperty({}, 'des', {value:'v'});
+    static #desF = Object.defineProperty({}, 'des', {value:()=>'f'});
+    static #desG = Object.defineProperty({}, 'des', {get:()=>'g'});
+    static #desS = Object.defineProperty({}, 'des', {set:(v)=>'s'});
+    static #desA = Object.defineProperty({}, 'des', {get:()=>'ag',set:(v)=>'as'});
+    static des() {return this.#data([this.#desV, this.#desF, this.#desG, this.#desS, this.#desA].map(d=>Object.getOwnPropertyDescriptor(d, 'des')))}
+    static #AsyncFunction = (async () => {}).constructor;
+    static #GeneratorFunction = (function* () {}).constructor;
+    static #AsyncGeneratorFunction = (async function* () {}).constructor;
+    static #C = class C {
+        static M() {return 'M'}
+        static get G() {return 'G'}
+        static set S(v) {return 'S'}
+        static get GS() {return 'GS'}
+        static set GS(v) {return 'GS'}
+        get V() {return 'V'}
+        get F() {return ()=>'F'}
+        m() {return 'm'}
+        get g() {return 'g'}
+        set s(v) {return 's'}
+        get gs() {return 'gs'}
+        set gs(v) {return 'gs'}
+        get v() {return 'v'}
+        get f() {return ()=>'f'}
+    };
+    static #c = new this.#C();
+    static #D = class D extends this.#C {constructor(){super()}}
+    static #d = new this.#D();
+    static cal() {return this.#data([...this.fn(), ...this.cls()])}
+    static fn() {return this.#data([()=>{}, async()=>{}, function(){}, function fn(){}, async function afn(){}, function *gfn(){}, async function *agfn(){}, this.#C.M, this.#c.m])}
     static #data(values, ...blacks) {return this.#wrap(this.#except(values, ...blacks))}
     static #except(values, ...blacks) {return values.filter(v=>!blacks.includes(v));}
     static #wrap(values) {return values.map(v=>[v])}
@@ -23,12 +58,13 @@ describe('a.js', ()=>{
     test('a', () => expect(a).toBeInstanceOf(Object));
     describe('a.b', ()=>{
         test('exist', () => expect(a.b).toBeInstanceOf(Function));
-        test.each([[Boolean,false],[Number,1],[String,'']])('(%p)->T', (t,v) => expect(a.b(new t(v))).toBe(true));
-        test.each([[Boolean,false],[Number,1],[String,'']])('(%p)->F', (t,v) => expect(a.b(t(v))).toBe(false));
+        const D = [[Boolean,false],[Number,1],[String,'']];
+        test.each(D)('(%p)->T', (t,v) => expect(a.b(new t(v))).toBe(true));
+        test.each(D)('(%p)->F', (t,v) => expect(a.b(t(v))).toBe(false));
         test.each(Data.P())('(%p)->F', (v) => expect(a.b(v)).toBe(false));
         describe('a.b.bln', ()=>{
             test('true', ()=>expect(a.b.bln(new Boolean(false))).toBe(true));
-            test.each([[Boolean,false],[Number,1],[String,'']])(`(%p)`, (t,v)=>expect(a.b.bln(new t(v))));
+            test.each(D)(`(%p)`, (t,v)=>expect(a.b.bln(new t(v))));
         });
         describe('a.b.num', ()=>{
             test('true', ()=>expect(a.b.num(new Number(1))).toBe(true));
@@ -58,8 +94,10 @@ describe('a.js', ()=>{
     });
     describe('a.p', ()=>{
         test('exist', () => expect(a.p).toBeInstanceOf(Function));
-        test.each([[false],[1],[''],[1n],[Symbol()]])('(%p)->T', (v) => expect(a.p(v)).toBe(true));
-        test.each([[null],[undefined],[NaN],[new Boolean()],[new Number()],[new String()],[new Date()],[{}],[[]],[()=>{}]])('(%p)->F', (v) => expect(a.p(v)).toBe(false));
+        //test.each([[false],[1],[''],[1n],[Symbol()]])('(%p)->T', (v) => expect(a.p(v)).toBe(true));
+        test.each(Data.P())('(%p)->T', (v) => expect(a.p(v)).toBe(true));
+        //test.each([[null],[undefined],[NaN],[new Boolean()],[new Number()],[new String()],[new Date()],[{}],[[]],[()=>{}]])('(%p)->F', (v) => expect(a.p(v)).toBe(false));
+        test.each(Data.all('C B ins ctn cal'.split(' ')))('(%p)->F', (v) => expect(a.p(v)).toBe(false));
         describe('.bln', ()=>{
             test('exist', () => expect(a.p.bln).toBeInstanceOf(Function));
             test.each(Data.bln())('true P(%p)', (v) => expect(a.p.bln(v)).toBe(true));
@@ -103,6 +141,7 @@ describe('a.js', ()=>{
     });
     describe('a.r', ()=>{
         test('exist', () => expect(a.r).toBeInstanceOf(Function));
+        
         test.each([[{}],[[]],[Object.create(null)],[function(){}],[()=>{}],[new Date()],[new (class{})()]])(``,(v)=>expect(a.r(v)).toBe(true));
         test.each([[null],[undefined],[NaN],[new Boolean()],[new Number()],[new String()],[false],[1],[''],[1n],[Symbol()]])('(%p)->F', (v) => expect(a.r(v)).toBe(false));
         describe('.cls', ()=>{
@@ -118,16 +157,89 @@ describe('a.js', ()=>{
         });
         describe('.ins', ()=>{
             test('exist', () => expect(a.r.ins).toBeInstanceOf(Function));
-            test.each([[new Date()],[new (class{})()]])('true %p', (v) => expect(a.r.ins(v)).toBe(true));
-            test.each([[null],[undefined],[NaN],[1],[1n],[''],[Symbol()],[{}],[[]],[Object.create(null)],[new Boolean()],[new Number()],[new String()],[Date],[class C{}],[function(){}],[()=>{}]])('false %p', (v) => expect(a.r.ins(v)).toBe(false));
+            //test.each([[new Date()],[new (class{})()]])('true %p', (v) => expect(a.r.ins(v)).toBe(true));
+            test.each(Data.ins())('true %p', (v) => expect(a.r.ins(v)).toBe(true));
+            //test.each([[null],[undefined],[NaN],[1],[1n],[''],[Symbol()],[{}],[[]],[Object.create(null)],[new Boolean()],[new Number()],[new String()],[Date],[class C{}],[function(){}],[()=>{}]])('false %p', (v) => expect(a.r.ins(v)).toBe(false));
+
+            //test.each(Data.all('C B bln num big str sym ctn cal cls des'.split(' ')))('false %p', (v) => expect(a.r.ins(v)).toBe(false));
+            test.each(Data.without('ins'))('false %p', (v) => expect(a.r.ins(v)).toBe(false));
+            describe('.then', ()=>{
+                class A {async then() {}}
+                const O = {then:()=>{}};
+                test.each([[new A()]])('(%p)->T', (v)=>expect(a.r.ins.then(v)).toBe(true));
+                test.each([[O]])('(%p)->F', (v)=>expect(a.r.ins.then(v)).toBe(false));
+                test.each([...Data.C(), ...Data.P(), ...Data.cls(), [A]])('(%p)->F', (v)=>expect(a.r.ins.then(v)).toBe(false));
+            });
         });
         describe('.then', ()=>{
+            class A {async then() {}}
+            const O = {then:()=>{}};
+            test.each([[new A()],[O]])('(%p)->T', (v)=>expect(a.r.then(v)).toBe(true));
+            //test.each([...Data.C(), ...Data.P(), ...Data.cls(), [A]])('(%p)->F', (v)=>expect(a.r.then(v)).toBe(false));
+            test.each(Data.all())('(%p)->F', (v)=>expect(a.r.then(v)).toBe(false));
         });
         describe('.des', ()=>{
+            test.each(Data.des())('(%p)->T', (v) => expect(a.r.des(v)).toBe(true));
+            //test.each(Data.all('C B bln num big str sym ctn cal cls'.split(' ')))('false %p', (v) => expect(a.r.des(v)).toBe(false));
+            test.each(Data.without('des'))('false %p', (v) => expect(a.r.des(v)).toBe(false));
         });
         describe('.ary', ()=>{
+            test.each(Data.ary())(`(%p)->T`, (v)=>expect(a.r.ary(v)).toBe(true));
+            test.each(Data.without('ary'))(`(%p)->F`, (v)=>expect(a.r.ary(v)).toBe(false));
+            describe('.blk', ()=>{
+                test.each(Data.ary())(`(%p)->T`, (v)=>expect(a.r.ary.blk(v)).toBe(true));
+                test.each([[[0],[0,1],new (class A extends Array{constructor(){super(1)}})()]])(`(%p)->F`, (v)=>expect(a.r.ary.blk(v)).toBe(false));
+            });
+            describe('.is', ()=>{
+                test.each([[[]],[[0]],[[0,1]]])(`(%p)->T`, (v)=>expect(a.r.ary.is(v)).toBe(true));
+                test.each([
+                    [new (class A extends Array{})()],
+                    [new (class A extends Array{constructor(){super(1)}})()],
+                ])(`(%p)->F`, (v)=>expect(a.r.ary.is(v)).toBe(false));
+                test.each(Data.without('ary'))(`(%p)->F`, (v)=>expect(a.r.ary.is(v)).toBe(false));
+            });
+            describe('.of', ()=>{
+                test.each([[[]],[[0]],[[0,1]]])(`(%p)->T`, (v)=>expect(a.r.ary.of(v)).toBe(true));
+                test.each([
+                    [new (class A extends Array{})()],
+                    [new (class A extends Array{constructor(){super(1)}})()],
+                ])(`(%p)->F`, (v)=>expect(a.r.ary.of(v)).toBe(true));
+                test.each(Data.without('ary'))(`(%p)->F`, (v)=>expect(a.r.ary.of(v)).toBe(false));
+            });
+            describe('.g', ()=>{
+                const nums = [0,-1,0.1];
+                const blns = [true,false,true];
+                const strs = ['', 'a', 'あ'];
+                const bigs = [0n,-1n,1n];
+                const syms = [Symbol(), Symbol(''), Symbol('a')];
+                test.each([[blns]])(`(%p)->T`, (v)=>expect(a.r.ary.g(v,Boolean)).toBe(true));
+                test.each([[nums]])(`(%p)->T`, (v)=>expect(a.r.ary.g(v,Number)).toBe(true));
+                test.each([[strs]])(`(%p)->T`, (v)=>expect(a.r.ary.g(v,String)).toBe(true));
+                test.each([[bigs]])(`(%p)->T`, (v)=>expect(a.r.ary.g(v,BigInt)).toBe(true));
+                test.each([[syms]])(`(%p)->T`, (v)=>expect(a.r.ary.g(v,Symbol)).toBe(true));
+                test.each([[blns]])(`(%p)->F`, (v)=>expect(a.r.ary.g(v,Number)).toBe(false));
+                test.each([[...blns, ...nums]])(`(%p)->F`, (v)=>expect(a.r.ary.g(v,Boolean)).toBe(false));
+                // 空配列は真になる
+                test.each(Data.ary())(`(%p)->T`, (v)=>expect(a.r.ary.g(v,Symbol)).toBe(true));
+                test.each(Data.without('bln','ary'))(`(%p)->F`, (v)=>expect(a.r.ary.g(v,Boolean)).toBe(false));
+            });
+            describe('.bit', ()=>{
+                const vs = [Int8Array,Uint8Array,Uint8ClampedArray,Int16Array,Uint16Array,Int32Array,Uint32Array,Float16Array,Float32Array,Float64Array,BigInt64Array,BigUint64Array].map(C=>[new C(1)]);
+                test.each(vs)(`(%p)->T`,(v)=>expect(a.r.ary.bit(v)).toBe(true));
+                test.each(Data.all())(`(%p)->F`, (v)=>expect(a.r.ary.bit(v)).toBe(false));
+            });
+            describe('.i8', ()=>{
+
+            });
         });
         describe('.obj', ()=>{
+            describe('.then', ()=>{
+                class A {async then() {}}
+                const O = {then:()=>{}};
+                test.each([[O]])('(%p)->T', (v)=>expect(a.r.obj.then(v)).toBe(true));
+                test.each([[new A()]])('(%p)->F', (v)=>expect(a.r.obj.then(v)).toBe(false));
+                test.each([...Data.C(), ...Data.P(), ...Data.cls(), [A]])('(%p)->F', (v)=>expect(a.r.obj.then(v)).toBe(false));
+            });
         });
         describe('.dic', ()=>{
         });
