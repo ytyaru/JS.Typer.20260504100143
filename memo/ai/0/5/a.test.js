@@ -1,7 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import {a} from './a.js';
 class Data {
-    //static #all = 'B C bln num big str sym ctn cls ins des cal'.split(' ');
     static #all = 'B C bln num big str sym obj dic ary cls fn ins des'.split(' ');
     static all(names, ...blacks) {return (Array.isArray(names) ? names : this.#all).flatMap(n=>this[n](...blacks));}
     static without(...blacks) {return this.all(this.#except(this.#all, ...blacks))}
@@ -32,6 +31,9 @@ class Data {
     static #AsyncGeneratorFunction = (async function* () {}).constructor;
     static #C = class C {
         static M() {return 'M'}
+        static async AM() {return 'AM'}
+        static *GM() {return 'GM'}
+        static async *AGM() {return 'AGM'}
         static get G() {return 'G'}
         static set S(v) {return 'S'}
         static get GS() {return 'GS'}
@@ -39,6 +41,9 @@ class Data {
         get V() {return 'V'}
         get F() {return ()=>'F'}
         m() {return 'm'}
+        *gm() {return 'gm'}
+        async am() {return 'am'}
+        async *agm() {return 'agm'}
         get g() {return 'g'}
         set s(v) {return 's'}
         get gs() {return 'gs'}
@@ -49,8 +54,15 @@ class Data {
     static #c = new this.#C();
     static #D = class D extends this.#C {constructor(){super()}}
     static #d = new this.#D();
-    static cal() {return this.#data([...this.fn(), ...this.cls()])}
-    static fn() {return this.#data([()=>{}, async()=>{}, function(){}, function fn(){}, async function afn(){}, function *gfn(){}, async function *agfn(){}, this.#C.M, this.#c.m])}
+    static cal() {return this.#data([...this.fn(), ...this.cls()].flatMap(v=>v))}
+    //static fn() {return this.#data([()=>{}, async()=>{}, function(){}, function fn(){}, async function afn(){}, function *gfn(){}, async function *agfn(){}, this.#C.M, this.#c.m])}
+    static fn() {return 'arrow clsMethod insMethod native bound functions'.split(' ').flatMap(n=>this[n]())}
+    static arrow() {return this.#data([()=>{}, async()=>{}])}
+    static clsMethod() {return this.#data([this.#C.M, this.#C.AM, this.#C.GM, this.#C.AGM])}
+    static insMethod() {return this.#data([this.#c.m, this.#c.am, this.#c.gm, this.#c.agm])}
+    static native() {return this.#data([Array.prototype.map])}
+    static bound() {return this.#data([(function(){}).bind(null)])}
+    static functions() {return this.#data([function(){}, function fn(){}, async function afn(){}, function *gfn(){}, async function *agfn(){}])}
     static #data(values, ...blacks) {return this.#wrap(this.#except(values, ...blacks))}
     static #except(values, ...blacks) {return values.filter(v=>!blacks.includes(v));}
     static #wrap(values) {return values.map(v=>[v])}
@@ -95,9 +107,7 @@ describe('a.js', ()=>{
     });
     describe('a.p', ()=>{
         test('exist', () => expect(a.p).toBeInstanceOf(Function));
-        //test.each([[false],[1],[''],[1n],[Symbol()]])('(%p)->T', (v) => expect(a.p(v)).toBe(true));
         test.each(Data.P())('(%p)->T', (v) => expect(a.p(v)).toBe(true));
-        //test.each([[null],[undefined],[NaN],[new Boolean()],[new Number()],[new String()],[new Date()],[{}],[[]],[()=>{}]])('(%p)->F', (v) => expect(a.p(v)).toBe(false));
         test.each(Data.all('C B ins ctn cal'.split(' ')))('(%p)->F', (v) => expect(a.p(v)).toBe(false));
         describe('.bln', ()=>{
             test('exist', () => expect(a.p.bln).toBeInstanceOf(Function));
@@ -158,11 +168,8 @@ describe('a.js', ()=>{
         });
         describe('.ins', ()=>{
             test('exist', () => expect(a.r.ins).toBeInstanceOf(Function));
-            //test.each([[new Date()],[new (class{})()]])('true %p', (v) => expect(a.r.ins(v)).toBe(true));
             test.each(Data.ins())('true %p', (v) => expect(a.r.ins(v)).toBe(true));
             //test.each([[null],[undefined],[NaN],[1],[1n],[''],[Symbol()],[{}],[[]],[Object.create(null)],[new Boolean()],[new Number()],[new String()],[Date],[class C{}],[function(){}],[()=>{}]])('false %p', (v) => expect(a.r.ins(v)).toBe(false));
-
-            //test.each(Data.all('C B bln num big str sym ctn cal cls des'.split(' ')))('false %p', (v) => expect(a.r.ins(v)).toBe(false));
             test.each(Data.without('ins'))('false %p', (v) => expect(a.r.ins(v)).toBe(false));
             describe('.then', ()=>{
                 class A {async then() {}}
@@ -176,12 +183,10 @@ describe('a.js', ()=>{
             class A {async then() {}}
             const O = {then:()=>{}};
             test.each([[new A()],[O]])('(%p)->T', (v)=>expect(a.r.then(v)).toBe(true));
-            //test.each([...Data.C(), ...Data.P(), ...Data.cls(), [A]])('(%p)->F', (v)=>expect(a.r.then(v)).toBe(false));
             test.each(Data.all())('(%p)->F', (v)=>expect(a.r.then(v)).toBe(false));
         });
         describe('.des', ()=>{
             test.each(Data.des())('(%p)->T', (v) => expect(a.r.des(v)).toBe(true));
-            //test.each(Data.all('C B bln num big str sym ctn cal cls'.split(' ')))('false %p', (v) => expect(a.r.des(v)).toBe(false));
             test.each(Data.without('des'))('false %p', (v) => expect(a.r.des(v)).toBe(false));
         });
         describe('.ary', ()=>{
@@ -288,34 +293,11 @@ describe('a.js', ()=>{
                 test.each(Data.obj())(`(%p)->T`, v=>expect(a.r.obj.blk(v)).toBe(true));
                 test.each([[{k:'v'}]])(`(%p)->F`, v=>expect(a.r.obj.blk(v)).toBe(false));
             });
-            /*
-            const O = class O extends Object{};
-            const o = new O();
-            test.each([[o]])(`(%p)->F`, v=>expect(a.r.obj(v)).toBe(false));
-            describe('.is', ()=>{
-                test.each(Data.obj())(`(%p)->T`, v=>expect(a.r.obj.is(v)).toBe(true));
-                test.each([[{k:'v'}]])(`(%p)->F`, v=>expect(a.r.obj.is(v)).toBe(true));
-                test.each([[o]])(`(%p)->F`, v=>expect(a.r.obj.is(v)).toBe(false));
-                test.each(Data.without('obj'))(`(%p)->F`, v=>expect(a.r.obj.is(v)).toBe(false));
-            });
-            describe('.of', ()=>{
-                test.each(Data.obj())(`(%p)->T`, v=>expect(a.r.obj.is(v)).toBe(true));
-                test.each([[{k:'v'}]])(`(%p)->F`, v=>expect(a.r.obj.is(v)).toBe(true));
-                test.each([[o]])(`(%p)->F`, v=>expect(a.r.obj.is(v)).toBe(true));
-                test.each(Data.without('obj'))(`(%p)->F`, v=>expect(a.r.obj.is(v)).toBe(false));
-            });
-            */
             const P = {k:1};
             const C = Object.create(P);
             describe('.has', ()=>{
-                //test.each([[P],[C]])(`(%p)->T`, v=>expect(a.r.obj.has(v,'k')).toBe(true));
                 test.each([[P]])(`P(%p)->T`, v=>expect(a.r.obj.has(v,'k')).toBe(true));
-                test.each([[C]])(`C(%p)->T`, v=>expect(a.r.obj.has(v,'k')).toBe(true));
-                test.each(Data.obj())(`(%p)->F`, v=>expect(a.r.obj.has(v,'k')).toBe(false));
-            });
-            describe('.hasOwn', ()=>{
-                test.each([[P]])(`(%p)->T`, v=>expect(a.r.obj.has(v,'k')).toBe(true));
-                test.each([[C]])(`(%p)->F`, v=>expect(a.r.obj.has(v,'k')).toBe(false));
+                test.each([[C]])(`C(%p)->T`, v=>expect(a.r.obj.has(v,'k')).toBe(false));
                 test.each(Data.obj())(`(%p)->F`, v=>expect(a.r.obj.has(v,'k')).toBe(false));
             });
             describe('.then', ()=>{
@@ -327,8 +309,34 @@ describe('a.js', ()=>{
             });
         });
         describe('.dic', ()=>{
+            test.each(Data.dic())(`(%p)->T`, v=>expect(a.r.dic(v)).toBe(true));
+            test.each(Data.without('dic'))(`(%p)->F`, v=>expect(a.r.dic(v)).toBe(false));
+            describe('.blk', ()=>{
+                test.each(Data.dic())(`(%p)->T`, v=>expect(a.r.dic.blk(v)).toBe(true));
+                test.each([[{k:'v'}]])(`(%p)->F`, v=>expect(a.r.dic.blk(v)).toBe(false));
+            });
+            const P = Object.create(null);
+            P.k = 1;
+            const C = Object.create(P);
+            describe('.has', ()=>{
+                test.each([[P]])(`P(%p)->T`, v=>expect(a.r.dic.has(v,'k')).toBe(true));
+                test.each([[C]])(`C(%p)->T`, v=>expect(a.r.dic.has(v,'k')).toBe(false));
+                test.each(Data.dic())(`(%p)->F`, v=>expect(a.r.dic.has(v,'k')).toBe(false));
+            });
         });
         describe('.cal', ()=>{
+            test.each(Data.cal())(`(%p)->T`, v=>expect(a.r.cal(v)).toBe(true));
+            test.each(Data.without('cls','fn'))(`(%p)->T`, v=>expect(a.r.cal(v)).toBe(false));
+            describe('.arrow', ()=>{
+            });
+            describe('.method', ()=>{
+            });
+            describe('.native', ()=>{
+            });
+            describe('.bound', ()=>{
+            });
+            describe('.fn', ()=>{
+            });
         });
 
 

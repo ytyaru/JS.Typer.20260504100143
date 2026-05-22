@@ -147,6 +147,7 @@ a.r.obj.blk = (v)=> a.r.obj(v) && 0===Object.keys(v).length;
 a.r.dic.blk = (v)=> a.r.dic(v) && 0===Object.keys(v).length;
 //a.r.obj.is = (v)=> a.r.obj(v);
 //a.r.obj.of = (v)=> a.r.obj(v) && v instanceof Object;
+/*
 class HasKeysVerifier {
   static #validIds = ['a.r.obj.has', 'a.r.obj.hasOwn', 'a.r.dic.has', 'a.r.dic.hasOwn'];
   static verify(v, keys, id) {
@@ -178,6 +179,13 @@ a.r.obj.has = (v, ...keys) => HasKeysVerifier.verify(v, keys, 'a.r.obj.has');
 a.r.obj.hasOwn = (v, ...keys) => HasKeysVerifier.verify(v, keys, 'a.r.obj.hasOwn');
 a.r.dic.has = (v, ...keys) => HasKeysVerifier.verify(v, keys, 'a.r.dic.has');
 a.r.dic.hasOwn = (v, ...keys) => HasKeysVerifier.verify(v, keys, 'a.r.dic.hasOwn');
+*/
+const has = (isDic, v, ...keys) => {
+    if (!(0<keys.length && keys.every(k=>a.p.str(k)))) {throw new Error(`...keysは残余引数かつ文字列で1個以上あるべきです。`)}
+    return a.r[isDic ? 'dic' : 'obj'](v) && keys.every(k=>k in v);
+};
+a.r.obj.has = (v, ...keys) => has(false, v, ...keys);
+a.r.dic.has = (v, ...keys) => has(true, v, ...keys);
 class Descriptor {
   static is(v) {return !!this.#get(v)}
   static isDat(v) {return ['data','function'].some(x=>x===getDes(v));}
