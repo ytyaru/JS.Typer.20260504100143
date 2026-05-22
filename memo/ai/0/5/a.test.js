@@ -54,15 +54,40 @@ class Data {
     static #c = new this.#C();
     static #D = class D extends this.#C {constructor(){super()}}
     static #d = new this.#D();
-    static cal() {return this.#data([...this.fn(), ...this.cls()].flatMap(v=>v))}
+//    static cal() {return this.#data([...this.fn(), ...this.cls()].flatMap(v=>v))}
+    // 2. cal() の flatMap 内で、一度ラップを解除（v[0]）してから関数かクラスかを評価する
+    static cal() {return this.#data([...this.fn(), ...this.cls()].flatMap(v=>v[0]));}
+    static fn() {return [()=>{}, async()=>{}, this.#C.M, this.#C.AM, this.#C.GM, this.#C.AGM, this.#c.m, this.#c.am, this.#c.gm, this.#c.agm, Array.prototype.map, (function(){}).bind(null), function(){}, function fn(){}, async function afn(){}, function *gfn(){}, async function *agfn(){}].map(v=>[v])}
     //static fn() {return this.#data([()=>{}, async()=>{}, function(){}, function fn(){}, async function afn(){}, function *gfn(){}, async function *agfn(){}, this.#C.M, this.#c.m])}
-    static fn() {return 'arrow clsMethod insMethod native bound functions'.split(' ').flatMap(n=>this[n]())}
+    //static fn() {return 'arrow clsMethod insMethod native bound functions'.split(' ').flatMap(n=>this[n]())}
+    //static fn(...blacks) {return this.#except('arrow clsMethod insMethod native bound functions'.split(' '), ...blacks).flatMap(n=>this[n]())}
+    //static fn(...blacks) {return this.#except('arrow clsMethod insMethod native bound functions'.split(' '), ...blacks).flatMap(n=>this[n]()).flat(2)}
+//    static fn(...blacks) {return this.#except('arrow clsMethod insMethod native bound functions'.split(' '), ...blacks).flatMap(n=>this[n]())}
+    /*
+    // 3. fn() をシンプルかつ正確にフラット化して返す
+    static fn(...blacks) {
+//        const targets = 'arrow clsMethod insMethod native bound functions'.split(' ');
+//        return this.#except(targets, ...blacks).flatMap(n => this[n]()).flat(2);
+        return this.#except('arrow ... functions'.split(' '), ...blacks).flatMap(n=>this[n]()).flat(2)
+    }
+    */
+    /*
     static arrow() {return this.#data([()=>{}, async()=>{}])}
+    static method() {return 'clsMethod insMethod'.split(' ').flatMap(n=>this[n]())}
     static clsMethod() {return this.#data([this.#C.M, this.#C.AM, this.#C.GM, this.#C.AGM])}
     static insMethod() {return this.#data([this.#c.m, this.#c.am, this.#c.gm, this.#c.agm])}
     static native() {return this.#data([Array.prototype.map])}
     static bound() {return this.#data([(function(){}).bind(null)])}
     static functions() {return this.#data([function(){}, function fn(){}, async function afn(){}, function *gfn(){}, async function *agfn(){}])}
+    */
+    static arrow() {return [()=>{}, async()=>{}].map(v=>[v])}
+    static method() {return [this.#C.M, this.#C.AM, this.#C.GM, this.#C.AGM, this.#c.m, this.#c.am, this.#c.gm, this.#c.agm].map(v=>[v])}
+    static clsMethod() {return [this.#C.M, this.#C.AM, this.#C.GM, this.#C.AGM].map(v=>[v])}
+    static insMethod() {return [this.#c.m, this.#c.am, this.#c.gm, this.#c.agm].map(v=>[v])}
+    static native() {return [Array.prototype.map].map(v=>[v])}
+    static bound() {return [(function(){}).bind(null)].map(v=>[v])}
+    static functions() {return [function(){}, function fn(){}, async function afn(){}, function *gfn(){}, async function *agfn(){}].map(v=>[v])}
+
     static #data(values, ...blacks) {return this.#wrap(this.#except(values, ...blacks))}
     static #except(values, ...blacks) {return values.filter(v=>!blacks.includes(v));}
     static #wrap(values) {return values.map(v=>[v])}
@@ -326,16 +351,56 @@ describe('a.js', ()=>{
         });
         describe('.cal', ()=>{
             test.each(Data.cal())(`(%p)->T`, v=>expect(a.r.cal(v)).toBe(true));
-            test.each(Data.without('cls','fn'))(`(%p)->T`, v=>expect(a.r.cal(v)).toBe(false));
+            test.each(Data.without('cls','fn'))(`(%p)->F`, v=>expect(a.r.cal(v)).toBe(false));
             describe('.arrow', ()=>{
+                test.each(Data.arrow())(`(%p)->T`, v=>expect(a.r.cal.arrow(v)).toBe(true));
+//                test.each(Data.fn('arrow'))(`(%p)->F`, v=>expect(a.r.cal.arrow(v)).toBe(false));
+//                test.each(Data.arrow())(`(%p)->F`, v=>expect(a.r.cal.arrow(v)).toBe(false));
+                test.each([[function(){}],[function*(){}]])(`(%p)->FFFFFFF`, v=>expect(a.r.cal.arrow(v)).toBe(false));
+                test.each(Data.method())(`(%p)->F`, v=>expect(a.r.cal.arrow(v)).toBe(false));
+                test.each(Data.bound())(`(%p)->F`, v=>expect(a.r.cal.arrow(v)).toBe(false));
+                test.each(Data.native())(`(%p)->F`, v=>expect(a.r.cal.arrow(v)).toBe(false));
+                test.each(Data.functions())(`(%p)->F`, v=>expect(a.r.cal.arrow(v)).toBe(false));
             });
             describe('.method', ()=>{
+                test.each(Data.method())(`(%p)->T`, v=>expect(a.r.cal.method(v)).toBe(true));
+//                test.each(Data.fn('clsMethod','insMethod'))(`(%p)->F`, v=>expect(a.r.cal.method(v)).toBe(false));
+                test.each(Data.arrow())(`(%p)->F`, v=>expect(a.r.cal.method(v)).toBe(false));
+                test.each(Data.method())(`(%p)->F`, v=>expect(a.r.cal.method(v)).toBe(false));
+                test.each(Data.bound())(`(%p)->F`, v=>expect(a.r.cal.method(v)).toBe(false));
+                test.each(Data.native())(`(%p)->F`, v=>expect(a.r.cal.method(v)).toBe(false));
+                test.each(Data.functions())(`(%p)->F`, v=>expect(a.r.cal.method(v)).toBe(false));
             });
             describe('.native', ()=>{
+                test.each(Data.native())(`(%p)->T`, v=>expect(a.r.cal.native(v)).toBe(true));
+//                test.each(Data.fn('native'))(`(%p)->F`, v=>expect(a.r.cal.native(v)).toBe(false));
+//                test.each(Data.method())(`(%p)->F`, v=>expect(a.r.cal.native(v)).toBe(false));
+//                test.each(Data.bound())(`(%p)->F`, v=>expect(a.r.cal.native(v)).toBe(false));
+//                test.each(Data.functions())(`(%p)->F`, v=>expect(a.r.cal.native(v)).toBe(false));
+//                test.each([[function(){}]])(`(%p)->F`, v=>expect(a.r.cal.native(v)).toBe(false));
+                test.each(Data.arrow())(`(%p)->F`, v=>expect(a.r.cal.native(v)).toBe(false));
+                test.each(Data.method())(`(%p)->F`, v=>expect(a.r.cal.native(v)).toBe(false));
+                test.each(Data.bound())(`(%p)->F`, v=>expect(a.r.cal.native(v)).toBe(false));
+                test.each(Data.native())(`(%p)->F`, v=>expect(a.r.cal.native(v)).toBe(false));
+                test.each(Data.functions())(`(%p)->F`, v=>expect(a.r.cal.native(v)).toBe(false));
             });
             describe('.bound', ()=>{
+                test.each(Data.bound())(`(%p)->T`, v=>expect(a.r.cal.bound(v)).toBe(true));
+//                test.each(Data.fn('bound'))(`(%p)->F`, v=>expect(a.r.cal.bound(v)).toBe(false));
+                test.each(Data.arrow())(`(%p)->F`, v=>expect(a.r.cal.bound(v)).toBe(false));
+                test.each(Data.method())(`(%p)->F`, v=>expect(a.r.cal.bound(v)).toBe(false));
+//                test.each(Data.bound())(`(%p)->F`, v=>expect(a.r.cal.bound(v)).toBe(false));
+                test.each(Data.native())(`(%p)->F`, v=>expect(a.r.cal.bound(v)).toBe(false));
+                test.each(Data.functions())(`(%p)->F`, v=>expect(a.r.cal.bound(v)).toBe(false));
             });
             describe('.fn', ()=>{
+                test.each(Data.functions())(`(%p)->T`, v=>expect(a.r.cal.fn(v)).toBe(true));
+//                test.each(Data.fn('functions'))(`(%p)->F`, v=>expect(a.r.cal.fn(v)).toBe(false));
+                test.each(Data.arrow())(`(%p)->F`, v=>expect(a.r.cal.fn(v)).toBe(false));
+                test.each(Data.method())(`(%p)->F`, v=>expect(a.r.cal.fn(v)).toBe(false));
+                test.each(Data.bound())(`(%p)->F`, v=>expect(a.r.cal.fn(v)).toBe(false));
+                test.each(Data.native())(`(%p)->F`, v=>expect(a.r.cal.fn(v)).toBe(false));
+//                test.each(Data.functions())(`(%p)->F`, v=>expect(a.r.cal.fn(v)).toBe(false));
             });
         });
 
