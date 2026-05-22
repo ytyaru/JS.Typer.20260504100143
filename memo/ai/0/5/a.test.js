@@ -357,6 +357,7 @@ describe('a.js', ()=>{
 //                test.each(Data.fn('arrow'))(`(%p)->F`, v=>expect(a.r.cal.arrow(v)).toBe(false));
 //                test.each(Data.arrow())(`(%p)->F`, v=>expect(a.r.cal.arrow(v)).toBe(false));
                 test.each([[function(){}],[function*(){}]])(`(%p)->FFFFFFF`, v=>expect(a.r.cal.arrow(v)).toBe(false));
+                test.each([function(){},function*(){}].map(v=>[v]))(`(%p)->FFFFFFF`, v=>expect(a.r.cal.arrow(v)).toBe(false));
                 test.each(Data.method())(`(%p)->F`, v=>expect(a.r.cal.arrow(v)).toBe(false));
                 test.each(Data.bound())(`(%p)->F`, v=>expect(a.r.cal.arrow(v)).toBe(false));
                 test.each(Data.native())(`(%p)->F`, v=>expect(a.r.cal.arrow(v)).toBe(false));
