@@ -1,0 +1,75 @@
+識別子パス	短縮名	フルパス型名	説明
+a.c	Constant	InactiveConstant	null, undefined, NaN のいずれか
+a.c.nul	Null	InactiveConstant.Null	null 厳密一致
+a.c.und	Undefined	InactiveConstant.Undefined	undefined 厳密一致
+a.c.nan	NaN	InactiveConstant.NaN	NaN 厳密一致
+a.p	Primitive	Primitive	プリミティブ型全般
+a.p.bln	Boolean	Primitive.Boolean	真偽値型
+a.p.num	Number	Primitive.Number	数値型（NaNを除く）
+a.p.big	BigInt	Primitive.BigInt	巨大整数型
+a.p.str	String	Primitive.String	文字列型
+a.p.sym	Symbol	Primitive.Symbol	シンボル型
+a.p.num.inf	Infinity	Primitive.Number.Infinity	無限数（正負問わず）
+a.p.num.inf.p	PositiveInfinity	Primitive.Number.Infinity.Positive	正の無限数
+a.p.num.inf.n	NegativeInfinity	Primitive.Number.Infinity.Negative	負の無限数
+a.p.num.unsafe	UnsafeNumber	Primitive.Number.Unsafe	安全な整数の範囲外の数値
+a.p.num.fin	Finite	Primitive.Number.Finite	安全な整数の範囲内の数値
+a.p.num.flt	Float	Primitive.Number.Float	浮動小数点数（整数でない）
+a.p.num.int	Int	Primitive.Number.Int	安全な整数
+a.p.num.uint	UInt	Primitive.Number.UInt	0以上の安全な整数（正の整数）
+a.p.num.int.bit	IntBit<bit>	Primitive.Number.Int.Bit	bit幅指定 of 符号付き整数
+a.p.num.uint.bit	UIntBit<bit>	Primitive.Number.UInt.Bit	bit幅指定 of 符号なし整数
+a.p.num.i8	Int8	Primitive.Number.Int.Int8	8bit 符号付き整数
+a.p.num.i16	Int16	Primitive.Number.Int.Int16	16bit 符号付き整数
+a.p.num.i32	Int32	Primitive.Number.Int.Int32	32bit 符号付き整数
+a.p.num.u8	UInt8	Primitive.Number.UInt.UInt8	8bit 符号なし整数
+a.p.num.u16	UInt16	Primitive.Number.UInt.UInt16	16bit 符号なし整数
+a.p.num.u32	UInt32	Primitive.Number.UInt.UInt32	32bit 符号なし整数
+a.p.num.int.within	IntWithin<min,max>	Primitive.Number.Int.Within	指定範囲内の整数
+a.p.num.uint.within	UIntWithin<min,max>	Primitive.Number.UInt.Within	指定範囲内の正の整数
+a.p.num.int.without	IntWithout<min,max>	Primitive.Number.Int.Without	指定範囲外の整数
+a.p.num.uint.without	UIntWithout<min,max>	Primitive.Number.UInt.Without	指定範囲外の正の整数
+a.p.str.blk	BlankString	Primitive.String.Blank	空文字（lengthが0）
+a.p.str.some	StringSome<candidates>	Primitive.String.Some	候補のいずれかに一致する文字列
+a.r	Reference	Reference	参照型全般
+a.r.then	Thenable	Reference.Thenable	thenメソッドを持つ任意の参照型（Promise含む）
+a.r.cls	Class<T>	Reference.Class	大文字始まりのクラス（コンストラクタ）
+a.r.cls.err	ErrorClass	Reference.Class.Error	Errorを継承したカスタムクラス
+a.r.cal	Callable	Reference.Callable	実行可能オブジェクト（関数全般）
+a.r.cal.arrow	ArrowFunction	Reference.Callable.ArrowFunction	アロー関数（同期・非同期問わず）
+a.r.cal.arrow.s	SyncArrowFunction	Reference.Callable.ArrowFunction.Sync	同期アロー関数
+a.r.cal.arrow.a	AsyncArrowFunction	Reference.Callable.ArrowFunction.Async	非同期アロー関数
+a.r.cal.method	Method	Reference.Callable.Method	オブジェクトのメソッド全般
+a.r.cal.method.s	SyncMethod	Reference.Callable.Method.Sync	同期メソッド
+a.r.cal.method.a	AsyncMethod	Reference.Callable.Method.Async	非同期メソッド
+a.r.cal.method.g	GeneratorMethod	Reference.Callable.Method.Generator	ジェネレータメソッド
+a.r.cal.method.ag	AsyncGeneratorMethod	Reference.Callable.Method.AsyncGenerator	非同期ジェネレータメソッド
+a.r.cal.native	NativeFunction	Reference.Callable.Native	組み込み関数
+a.r.cal.bound	BoundFunction	Reference.Callable.BoundFunction	bindされた関数
+a.r.cal.fn	Function	Reference.Callable.Function	通常のユーザー定義関数全般
+a.r.cal.fn.s	SyncFunction	Reference.Callable.Function.Sync	同期通常の関数
+a.r.cal.fn.a	AsyncFunction	Reference.Callable.Function.Async	async関数の通常形態
+a.r.cal.fn.g	GeneratorFunction	Reference.Callable.Function.Generator	*付きのジェネレータ関数
+a.r.cal.fn.ag	AsyncGeneratorFunction	Reference.Callable.Function.AsyncGenerator	async*付きのジェネレータ関数
+a.r.ary	Array	Reference.Array	配列
+a.r.obj	Object	Reference.Object	プレーンオブジェクト（POJO）
+a.r.obj.then	ThenableObject	Reference.Object.Thenable	thenを持つプレーンオブジェクト
+a.r.obj.has	ObjectHas<keys>	Reference.Object.Has	指定キーを持つオブジェクト
+a.r.obj.hasOwn	ObjectHasOwn<keys>	Reference.Object.HasOwn	指定の自前キーを持つオブジェクト
+a.r.dic	Dictionary	Reference.Dictionary	純粋な辞書（prototypeなし）
+a.r.dic.has	DictionaryHas<keys>	Reference.Dictionary.Has	指定キーを持つ辞書
+a.r.dic.hasOwn	DictionaryHasOwn<keys>	Reference.Dictionary.HasOwn	指定の自前キーを持つ辞書
+a.r.des	Descriptor	Reference.PropertyDescriptor	プロパティ記述子全般
+a.r.des.dat	DataDescriptor	Reference.PropertyDescriptor.Data	データまたは関数記述子
+a.r.des.dat.v	ValueDescriptor	Reference.PropertyDescriptor.Data.Value	値を持つデータ記述子
+a.r.des.dat.fn	FunctionDescriptor	Reference.PropertyDescriptor.Data.Function	関数を持つデータ記述子
+a.r.des.acc	AccessorDescriptor	Reference.PropertyDescriptor.Accessor	アクセサ記述子全般
+a.r.des.acc.get	Getter	Reference.PropertyDescriptor.Accessor.Getter	getterを持つ記述子
+a.r.des.acc.set	Setter	Reference.PropertyDescriptor.Accessor.Setter	setterを持つ記述子
+a.r.des.acc.gs	GetterSetter	Reference.PropertyDescriptor.Accessor.GetterSetter	getter/setter両方を持つ記述子
+a.r.ins	Instance	Reference.Instance	プレーン以外のすべてのインスタンス
+a.r.ins.then	ThenableInstance	Reference.Instance.Thenable	thenを持つインスタンスオブジェクト
+a.r.ins.of	InstanceOf<T>	Reference.Instance.Of	クラスを継承したインスタンス
+a.r.ins.is	InstanceIs<T>	Reference.Instance.Is	クラスと厳密一致するインスタンス
+a.r.ins.err	ErrorInstance	Reference.Instance.Error	Errorのインスタンス
+
