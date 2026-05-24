@@ -12,9 +12,12 @@ const TYPIS = (isThrow, isOf, ...args) => {
 	if ('object'===typeof v && B.some(b=>b===v?.constructor)) {throw Error(`不正な値です。BoxedPrimitive<${v?.constructor?.name}>`)}
 	if (1===args.length) {return getTag(args[0])}
 	const A = args.slice(1);
-	const NotT = A.find(C=>!isTs(C));
+//	const NotT = A.find(C=>!isTs(C));
+	for (let C of A) {
+		if (!isTs(C)) {throw new Error(`引数不正です。第二引数は期待する型を指定してください。null,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。:${getTag(C)}`)}
+	}
 	//if (A.some(C=>!isTs(C))) {throw new Error(`引数不正です。第二引数は期待する型を指定してください。null,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。:${getTag(A.find(C=>!isTs(C)))}`)}
-	if (null!==NotT) {throw new Error(`引数不正です。第二引数は期待する型を指定してください。null,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。:${getTag(NotT)}`)}
+//	if (null!==NotT) {throw new Error(`引数不正です。第二引数は期待する型を指定してください。null,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。:${getTag(NotT)}`)}
 	const R = A.some(C=>TYPEONE(v,C,false,isOf));
 	//if (isThrow && !R) {throw new TypeError(`値が期待する型と違います。期待:${isCls(C) ? C.name : getTag(C)}, 実際:${getTag(v)}, 値:${v}`)}
 	if (isThrow && !R) {throw new TypeError(`値が期待する型と違います。期待:${A.map(C=>isCls(C) ? C.name : getTag(C))}, 実際:${getTag(v)}, 値:${v}`)}

@@ -299,7 +299,7 @@ describe('typer', () => {
     });
     describe('Error', () => {
         test.each([[0,String],[new C(),P]])('(%p,%p)',(v,C)=>{
-            try{typer(0,String);expect.unreachable();}catch(e){
+            try{typer(v,C);expect.unreachable();}catch(e){
                 expect(e).toBeInstanceOf(TypeError)
                 expect(e.message).toBe(`値が期待する型と違います。期待:${isCls(C) ? C.name : getTag(C)}, 実際:${getTag(v)}, 値:${v}`);
             }
