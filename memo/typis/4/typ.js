@@ -1,0 +1,30 @@
+const B = [Boolean, Number, String];
+const P = [...B, BigInt, Symbol];
+const R = [Function, Array, Object];
+const isCon = (v,...E)=>E.some(e=>e===v);
+const isFn = v=>'function'===typeof v;
+const isCls = v=>isFn(v) && /^[A-Z]+/.test(v?.name);
+const isTs = C=>Number.isNaN(C) || [null,undefined,Infinity,-Infinity].some(x=>x===C) || isFn(C);
+const isO = v=>null!==v && 'object'===typeof v;
+export const getTag = v=>Number.isNaN(v) ? 'NaN' : (isCls(v) ? v.name : Object.prototype.toString.call(v).slice(8,-1));
+const TYPEOF = (isOf=true, ...args) => {
+	if (0===args.length) {throw new Error('引数不足です。第一引数に検査する値、第二引数に期待する型を指定してください。型はnull,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。もし第一引数のみであれば型名を、第二引数まであれば真偽値を返します。')}
+	const v = args[0];
+	if ('object'===typeof v && B.some(b=>b===v?.constructor)) {throw Error(`不正な値です。BoxedPrimitive<${v?.constructor?.name}>`)}
+	if (1===args.length) {return getTag(args[0])}
+	return args.slice(1).some(C=>TYPEONE(v,C,isOf));
+}
+const TYPEONE = (v, C, isOf=true) => {
+	if (!isTs(C)) {throw new Error(`引数不正です。第二引数は期待する型を指定してください。null,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。:${getTag(C)}`)}
+	if (Number.isNaN(v)) {return Number.isNaN(C)}
+	if ([v,C].some(x=>isCon(x, null, undefined, Infinity, -Infinity))) {return v===C}
+	if (P.some(p=>p===C)) {return typeof v === C.name.toLowerCase()}
+	if (Function===C) {return isFn(v)}
+	if (Array===C) {return Array.isArray(v)}
+	//if (Object===C) {return isO(v) && Object.prototype===Object.getPrototypeOf(v)}
+	if (Object===C) {return isO(v) && (isOf ? true : Object.prototype===Object.getPrototypeOf(v))}
+	return v instanceof C && isOf ? true : v.constructor===C;
+}
+export const typof = (...args) => TYPEOF(true, ...args);
+export const typis = (...args) => TYPEOF(false, ...args);
+
