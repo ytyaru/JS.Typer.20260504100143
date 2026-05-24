@@ -12,20 +12,15 @@ const TYPIS = (isThrow, isOf, ...args) => {
 	if ('object'===typeof v && B.some(b=>b===v?.constructor)) {throw Error(`不正な値です。BoxedPrimitive<${v?.constructor?.name}>`)}
 	if (1===args.length) {return getTag(args[0])}
 	const A = args.slice(1);
-//	const NotT = A.find(C=>!isTs(C));
+	const R = []
 	for (let C of A) {
 		if (!isTs(C)) {throw new Error(`引数不正です。第二引数は期待する型を指定してください。null,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。:${getTag(C)}`)}
+		R.push(TYPEONE(v,C,false,isOf));
 	}
-	//if (A.some(C=>!isTs(C))) {throw new Error(`引数不正です。第二引数は期待する型を指定してください。null,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。:${getTag(A.find(C=>!isTs(C)))}`)}
-//	if (null!==NotT) {throw new Error(`引数不正です。第二引数は期待する型を指定してください。null,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。:${getTag(NotT)}`)}
-	const R = A.some(C=>TYPEONE(v,C,false,isOf));
-	//if (isThrow && !R) {throw new TypeError(`値が期待する型と違います。期待:${isCls(C) ? C.name : getTag(C)}, 実際:${getTag(v)}, 値:${v}`)}
-	if (isThrow && !R) {throw new TypeError(`値が期待する型と違います。期待:${A.map(C=>isCls(C) ? C.name : getTag(C))}, 実際:${getTag(v)}, 値:${v}`)}
+	if (isThrow && !R.every(r=>r)) {throw new TypeError(`値が期待する型と違います。期待:${A.map(C=>isCls(C) ? C.name : getTag(C))}, 実際:${getTag(v)}, 値:${v}`)}
 	return R;
-//	return args.slice(1).some(C=>TYPEONE(v,C,isThrow,isOf));
 }
 const TYPEONE = (v, C, isThrow, isOf=false) => {
-//	if (!isTs(C)) {throw new Error(`引数不正です。第二引数は期待する型を指定してください。null,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。:${getTag(C)}`)}
 	if (Number.isNaN(v)) {return Number.isNaN(C)}
 	if ([v,C].some(x=>isCon(x, null, undefined, Infinity, -Infinity))) {return v===C}
 	if (P.some(p=>p===C)) {return typeof v === C.name.toLowerCase()}
@@ -33,7 +28,6 @@ const TYPEONE = (v, C, isThrow, isOf=false) => {
 	if (Array===C) {return Array.isArray(v) && (isOf ? true : Array.prototype===Object.getPrototypeOf(v))}
 	if (Object===C) {return isO(v) && (isOf ? true : Object.prototype===Object.getPrototypeOf(v))}
 	const R = v instanceof C && isOf ? true : v.constructor===C;
-//	if (isThrow && !R) {throw new TypeError(`値が期待する型と違います。期待:${isCls(C) ? C.name : getTag(C)}, 実際:${getTag(v)}, 値:${v}`)}
 	return R;
 }
 export const typis = (...args) => TYPIS(false, false, ...args);
