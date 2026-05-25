@@ -350,6 +350,96 @@ describe('typef', () => {
         });
     });
 });
+describe('typnm', () => {
+    test('()',()=>{
+        try{typnm();expect.unreachable();}catch(e){
+            expect(e).toBeInstanceOf(Error);
+            expect(e.message).toBe(`引数不足です。第一引数に検査する値、第二引数に期待する型を指定してください。型はnull,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。もし第一引数のみであれば型名を、第二引数まであれば真偽値を返します。`);
+        }
+    });
+    describe('Error:非型名',()=>{
+        test.each([...[undefined,NaN,null,false,0,0n,Symbol,Date,new Date()].map(v=>[v])])('(%p)',v=>{
+            try{typnm(v,v);expect.unreachable();}catch(e){
+                expect(e).toBeInstanceOf(Error);
+                expect(e.message).toBe(`型名は文字列であるべきです。`);
+            }
+        });
+    });
+    describe('(v)',()=>{
+        test('(0)->"Number"',()=>expect(typnm(0)).toBe('Number'));
+        test('(未定義)->"Undefined"',()=>expect(typnm(globalThis.notExistVar)).toBe('Undefined'));
+    });
+    describe('(v,C)',()=>{
+        describe('T',()=>{
+            test('(0,"Number")',()=>expect(typnm(0,"Number")).toBe(true));
+            test('(未定義)',()=>expect(typnm(globalThis.notExistVar,"Undefined")).toBe(true));
+        });
+        describe('F',()=>{
+            test('(0,"String")',()=>expect(typnm(0,"String")).toBe(false));
+        });
+    });
+    describe('(v,...Cs)',()=>{
+        describe('T',()=>{
+            test('(0,"BigInt","Number")',()=>expect(typnm(0,"BigInt","Number")).toBe(true));
+            test('(未定義)',()=>expect(typnm(globalThis.notExistVar,"Number","Undefined")).toBe(true));
+        });
+        describe('F',()=>{
+            test('(0,"BigInt","String")',()=>expect(typnm(0,"BigInt","String")).toBe(false));
+        });
+    });
+});
+describe('typem', () => {
+    test('()',()=>{
+        try{typem();expect.unreachable();}catch(e){
+            expect(e).toBeInstanceOf(Error);
+            expect(e.message).toBe(`引数不足です。第一引数に検査する値、第二引数に期待する型を指定してください。型はnull,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。もし第一引数のみであれば型名を、第二引数まであれば真偽値を返します。`);
+        }
+    });
+    describe('Error:非型名',()=>{
+        test.each([...[undefined,NaN,null,false,0,0n,Symbol,Date,new Date()].map(v=>[v])])('(%p)',v=>{
+            try{typem(v,v);expect.unreachable();}catch(e){
+                expect(e).toBeInstanceOf(Error);
+                expect(e.message).toBe(`型名は文字列であるべきです。`);
+            }
+        });
+    });
+    describe('(v)',()=>{
+        test('(0)->"Number"',()=>expect(typem(0)).toBe('Number'));
+        test('(未定義)->"Undefined"',()=>expect(typem(globalThis.notExistVar)).toBe('Undefined'));
+    });
+    describe('(v,C)',()=>{
+        describe('T',()=>{
+            test('(0,"Number")',()=>expect(typem(0,"Number")).toBe(true));
+            test('(未定義)',()=>expect(typem(globalThis.notExistVar,"Undefined")).toBe(true));
+        });
+        describe('F',()=>{
+            test.each([[0,["String"]]])(`(%p,%p)`,(v,Ts)=>{
+                try{typem(v,...Ts);expect.unreachable();}catch(e){
+                    expect(e).toBeInstanceOf(Error);
+                    const isName = true;
+                    const expected = isName ? Ts.join(',') : (Ts.map(T=>isCls(T) ? T.name : getTag(T)));
+                    expect(e.message).toBe(`値が期待する型と違います。期待:${expected}, 実際:${getTag(v)}, 値:${v}`);
+                }
+            });
+        });
+    });
+    describe('(v,...Cs)',()=>{
+        describe('T',()=>{
+            test('(0,"BigInt","Number")',()=>expect(typem(0,"BigInt","Number")).toBe(true));
+            test('(未定義)',()=>expect(typem(globalThis.notExistVar,"Number","Undefined")).toBe(true));
+        });
+        describe('F',()=>{
+            test.each([[0,["BigInt","String"]]])(`(%p,%p)`,(v,Ts)=>{
+                try{typem(v,...Ts);expect.unreachable();}catch(e){
+                    expect(e).toBeInstanceOf(Error);
+                    const isName = true;
+                    const expected = isName ? Ts.join(',') : (Ts.map(T=>isCls(T) ? T.name : getTag(T)));
+                    expect(e.message).toBe(`値が期待する型と違います。期待:${expected}, 実際:${getTag(v)}, 値:${v}`);
+                }
+            });
+        });
+    });
+});
 describe('Typ', () => {
     describe('new', () => {
         test('禁止',()=>{

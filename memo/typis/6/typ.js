@@ -3,7 +3,7 @@ const P = [...B, BigInt, Symbol];
 const thB = v=>{if ('object'===typeof v && B.some(b=>b===v?.constructor)) {throw Error(`不正な値です。BoxedPrimitive<${v?.constructor?.name}>`)}}
 const isCon = (v,...E)=>E.some(e=>e===v);
 const isFn = v=>'function'===typeof v;
-// /^class\b/.test(Function.prototype.toString.call(v).trim())判定はBabelで関数化すると無効故使用せず。
+// /^class\b/.test(Function.prototype.toString.call(v).trim())判定はBabelで関数化すると無効故統一の為使用せず。
 const isCls = v=>isFn(v) && /^[A-Z]+/.test(v?.name);
 const isTs = C=>Number.isNaN(C) || [null,undefined,Infinity,-Infinity].some(x=>x===C) || isFn(C);
 const isO = v=>null!==v && 'object'===typeof v;
@@ -24,7 +24,7 @@ export const getTag = (...V)=>{
 }
 class Typer {
     static execute(isThrow, isOf, isName, ...args) {
-        const [v,Ts] = this.#validate(...args);
+        const [v,Ts] = this.#validate(isName, ...args);
         if (0===Ts.length) {return getTag(v)}
         return this.#result(isThrow, isOf, isName, v, Ts);
     }
@@ -34,7 +34,7 @@ class Typer {
         if (isThrow && !R) {throw new TypeError(`値が期待する型と違います。期待:${expected}, 実際:${getTag(v)}, 値:${v}`)}
         return R;
     }
-    static #validate(...args) {
+    static #validate(isName, ...args) {
         if (0===args.length) {throw new Error('引数不足です。第一引数に検査する値、第二引数に期待する型を指定してください。型はnull,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。もし第一引数のみであれば型名を、第二引数まであれば真偽値を返します。')}
         const [v,Ts] = [args[0],args.slice(1)];
         thB(v);
@@ -42,7 +42,7 @@ class Typer {
     }
     static #isName(v, Ns) {
         Ns.forEach(N=>{if ('string'!==typeof N) {throw new Error(`型名は文字列であるべきです。`)}});
-        return Ns.some(N=>N===v);
+        return Ns.some(N=>N===getTag(v));
     }
     static #isType(isOf, v, Ts) {
         const R = []
@@ -61,10 +61,6 @@ class Typer {
         if (Object===T) {return isO(v) && (isOf ? true : Object.prototype===Object.getPrototypeOf(v))}
         const R = v instanceof T && isOf ? true : v.constructor===T;
         return R;
-    }
-    static #validType(isName, T) {
-        if (isName){if('string'!==typeof T){throw new Error(`型名は文字列であるべきです。`)}}
-        else {if (!isTs(T)) {throw new Error(`引数不正です。第二引数は期待する型を指定してください。null,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。:${getTag(T)}`)}}
     }
 }
 export const typis = (...args) => Typer.execute(false, false, false, ...args);
@@ -94,8 +90,8 @@ export class Typ {
     of(...args) {return Typer.execute(this._.isThrow, true , false, ...args);}
     as(...args) {return Typer.execute(this._.isThrow, false, true, ...args);}
     isBoxedPrim(v) {}
+    isInvalidObj(v) {}
     isPrim(v) {}
-    isInvalid(v) {}
     isCls(v) {}
     isIns(v) {}
     isAry(v) {}
