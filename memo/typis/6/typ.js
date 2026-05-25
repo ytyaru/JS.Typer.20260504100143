@@ -93,9 +93,11 @@ export class Typ {
     isInvalidObj(v) {}
     isPrim(v) {}
     isCls(v) {}
-    isIns(v) {}
+    isIns(v,C) {}
     isAry(v) {}
     isObj(v) {}
     isDic(v) {}
-    isDes(v) {}
+    isDes(v,options) {}
+    isFn(v,options) {//{s:false, a:false, g:false}
+    }
 }
