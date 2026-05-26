@@ -155,7 +155,7 @@ export class Typ {
     isAry(v) {}
     isObj(v) {}
     isDic(v) {}
-    isDes(v,options) {}
+    isDes(v,options) {}// {data/accessor, value/function, g/s/gs}
     isFn(v,options) {//{s:false, a:false, g:false}/{fn:, arrow:, method:, native:, bound:}
     }
 }

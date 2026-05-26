@@ -592,8 +592,25 @@ describe('Typ', () => {
                 test.each([[false,'Boolean'],[0,'Number'],['','String'],[Symbol(),'Symbol'],[0n,'BigInt']])(`(%p,%p)`,(v,C)=>{
                     expect(T.as(v,C)).toBe(true);
                 });
-                test.each([[Object.create(null),'Dictionary']])(`(%p)->%p`,(v,C)=>expect(T.as(v,C)).toBe(true));
-//                test(`(Object.create(null))->"Dictionary"`,()=>expect(T.as(Object.create(null),'Dictionary')).toBe('Dictionary'))
+                // as()でしか判別できない詳細型
+                test.each([[Object.create(null),'Dictionary'],[async()=>{},'AsyncFunction'],[function*(){},'GeneratorFunction'],[async function*(){},'AsyncGeneratorFunction']])(`(%p)->%p`,(v,C)=>expect(T.as(v,C)).toBe(true));
+                describe(`des.obj`,()=>{
+                    test(`->Descriptor.Data<Value>`,()=>{
+                        const o = {}
+                        Object.defineProperty(o,'v',{value:1});
+                        expect(T.as(Object.getOwnPropertyDescriptor(o,'v'),'Descriptor.Data<Value>')).toBe(true);
+                    });
+                    test(`->Descriptor.Data<Function>`,()=>{
+                        const o = {}
+                        Object.defineProperty(o,'v',{value:()=>1});
+                        expect(T.as(Object.getOwnPropertyDescriptor(o,'v'),'Descriptor.Data<Function>')).toBe(true);
+                    });
+                });
+                describe(`des.cls`,()=>{
+                    test.each([[Object.getOwnPropertyDescriptor(P,'sg'),`Descriptor.Accessor<Getter>`]])(`(%p)->%p`,(v,C)=>expect(T.as(v,C)).toBe(true));
+                    test.each([[Object.getOwnPropertyDescriptor(P,'ss'),`Descriptor.Accessor<Setter>`]])(`(%p)->%p`,(v,C)=>expect(T.as(v,C)).toBe(true));
+                    test.each([[Object.getOwnPropertyDescriptor(P,'sgs'),`Descriptor.Accessor<Getter,Setter>`]])(`(%p)->%p`,(v,C)=>expect(T.as(v,C)).toBe(true));
+                });
             });
             describe('Error', () => {
                 test.each([[new Boolean(),Boolean]])('(%p,%p)',(v,C)=>{
