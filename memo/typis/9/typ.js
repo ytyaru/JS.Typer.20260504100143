@@ -7,6 +7,8 @@ const isFn = v=>'function'===typeof v;
 const isCls = v=>isFn(v) && /^[A-Z]+/.test(v?.name);
 const isTs = C=>Number.isNaN(C) || [null,undefined,Infinity,-Infinity].some(x=>x===C) || isFn(C);
 const isO = v=>null!==v && 'object'===typeof v;
+const isDic =v=>isO(v) && null===Object.getPrototypeOf(v);
+const isBrokenObject = v => isO(v) && Object.hasOwn(v, 'constructor');
 const isIns = v=>{
     if (!isO(v)) { return false; }
     const proto = Object.getPrototypeOf(v);
@@ -21,8 +23,14 @@ const getObjTag =v=>{
     if (des) return des;
     const ctr = [Object,Array].find(C=>C.prototype===proto);
     if (ctr) return v.constructor.name;
+    if (isBrokenObject(v)) {throw new Error(`不正な値です。constructorが破綻したオブジェクトです。`)}
     return isIns(v) ? `Instance<${v.constructor.name}>`: tag(v);
 }
+const result = (isThrow, R, expected, v) => {
+    if (isThrow && !R) {throw new TypeError(`値が期待する型と違います。期待:${expected}, 実際:${getTag(v)}, 値:${v}`)}
+    return R;
+}
+
 class Descriptor {
   static tag(v) {
     switch(this.#get(v)) {
@@ -56,6 +64,7 @@ class Descriptor {
     if (isDataDescriptor && (isG || isS)) return null;
     return isDataDescriptor ? dat : acc;
   }
+//        return result(this._.isThrow, R, expected, v);
 }
 class Caller {
   static tag(v) {
@@ -76,19 +85,10 @@ class Caller {
   static #getKind(v,s) {
     for (let N of this.#Ns) {if (this[`_is${N}`](v,s)) return N;}
     throw new Error(`Implementation Error.`);
-    /*
-    if (this._isFn(v,s)) return 'Function';
-    else if (this._isArrow(v,s)) return 'Arrow';
-    else if (this._isBound(v,s)) return 'Bound';
-    else if (this._isNative(v,s)) return 'Native';
-    else if (this._isMethod(v,s)) return 'Method';
-    else {throw new Error(`Implementation Error.`)}
-    */
   }
   static #getAG(v) {
     const T = tag(v);
     return ['Async','Generator'].map(n=>T.includes(n));
-//    return [a:T.includes('Async') ? 'Async' : '', g:T.includes('Generator')];
   }
   static is(v) {return isFn(v) && !isCls(v)}
   static isFn(v) {return this.#is(v) && this._isFunction(v,this.#fnSrc(v))}
@@ -97,8 +97,6 @@ class Caller {
   static isNative(v) {return this.#is(v) && this._isNative(v,this.#fnSrc(v))}
   static isMethod(v) {return this.#is(v) && this._isMethod(v,this.#fnSrc(v))}
   static #fnSrc(v){return this.#remCmt(Function.prototype.toString.call(v))}
-  //static #fnSrc(v){return Function.prototype.toString.call(v)}
-  // 正規表現の先頭判定を狂わせるコメント(ブロック/インライン)を消去
   static #remCmt(s){return s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '').trim()}
 }
 const tag = v=>Object.prototype.toString.call(v).slice(8,-1);
@@ -122,8 +120,9 @@ class Typer {
     static #result(isThrow, isOf, isName, v, Ts) {
         const R = isName ? this.#isName(v, Ts) : this.#isType(isOf, v, Ts);
         const expected = isName ? Ts.join(',') : (Ts.map(T=>isCls(T) ? T.name : getTag(T)));
-        if (isThrow && !R) {throw new TypeError(`値が期待する型と違います。期待:${expected}, 実際:${getTag(v)}, 値:${v}`)}
-        return R;
+//        if (isThrow && !R) {throw new TypeError(`値が期待する型と違います。期待:${expected}, 実際:${getTag(v)}, 値:${v}`)}
+//        return R;
+        return result(isThrow, R, expected, v);
     }
     static #validate(isName, ...args) {
         if (0===args.length) {throw new Error('引数不足です。第一引数に検査する値、第二引数に期待する型を指定してください。型はnull,undefined,NaN,Infinity,コンストラクタ関数のいずれかです。もし第一引数のみであれば型名を、第二引数まであれば真偽値を返します。')}
@@ -149,7 +148,6 @@ class Typer {
         if (P.some(p=>p===T)) {return typeof v === T.name.toLowerCase()}
         if (Function===T) {return isFn(v)}
         if (Array===T) {return Array.isArray(v) && (isOf ? true : Array.prototype===Object.getPrototypeOf(v))}
-//        if (Object===T) {return isO(v) && (isOf ? true : Object.prototype===Object.getPrototypeOf(v))}
         if (Object===T) {return isO(v) && (isOf ? true : (Object.prototype===Object.getPrototypeOf(v) && !Descriptor.is(v)))}
         const R = v instanceof T && isOf ? true : v.constructor===T;
         return R;
@@ -181,10 +179,11 @@ export class Typ {
     is(...args) {console.log(`Typ.is:`);return Typer.execute(this._.isThrow, false, false, ...args);}
     of(...args) {return Typer.execute(this._.isThrow, true , false, ...args);}
     as(...args) {return Typer.execute(this._.isThrow, false, true, ...args);}
-    isInvalidObj(v) {}
-    isB(v) {}// BoxedPrimitive
-    isC(v) {}// Constant
-    isP(v) {}// Primitive
+    isBlokenObj(v) {}
+    isBoxedPrimitive(v) {}// BoxedPrimitive
+    isNun(v) {}// InactiveConstant(NaN,Null,Undefined)
+    isPrimitive(v) {}// Primitive
+    isReference(v) {}// Reference
     isCal(v,C) {}
     isCls(v,C) {}
     isIns(v,C) {}
@@ -192,8 +191,8 @@ export class Typ {
     isObj(v) {}
     isDic(v) {}
     isDes(v,options) {}// {data/accessor, value/function, g/s/gs}
-    isFn(v,options) {//{s:false, a:false, g:false}/{fn:, arrow:, method:, native:, bound:}
-    }
+    isFn(v,options) {}//{s:false, a:false, g:false}/{fn:, arrow:, method:, native:, bound:}
     get cal() {return Caller}
+
     get des() {return Descriptor}
 }
